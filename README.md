@@ -1,4 +1,4 @@
-# Chory - Family Chore Management App
+# Chorly - Family Chore Management App
 
 A gamified family chore management web application built with React, Express, and TypeScript.
 
@@ -13,42 +13,54 @@ A gamified family chore management web application built with React, Express, an
 
 ## Free Deployment Guide
 
-### Option 1: Vercel (Recommended - Free)
+### Option 1: Render.com (Recommended - 100% Free)
 
-1. **Fork this repository** to your GitHub account
+1. **Push to GitHub**: Use Replit's version control to push your code
 
-2. **Connect to Vercel**:
-   - Go to [vercel.com](https://vercel.com)
+2. **Deploy on Render**:
+   - Go to [render.com](https://render.com)
    - Sign up with GitHub
-   - Import your forked repository
+   - Click "New +" → "Web Service"
+   - Connect your `chorly` repository
 
-3. **Environment Variables** (Optional for basic use):
-   - The app works with in-memory storage by default
-   - Data resets on server restart (acceptable for family use)
+3. **Render will auto-detect**:
+   - Build Command: `npm run build` 
+   - Start Command: `npm start`
+   - Node Version: 18
+   - All settings from `render.yaml`
 
-4. **Deploy**:
-   - Vercel handles everything automatically
-   - Custom domain support included in free tier
+4. **Free deployment includes**:
+   - 750 hours/month (full month coverage)
+   - Custom domain: `https://chorly-family-app.onrender.com`
+   - Automatic SSL certificate
+   - GitHub auto-deployment on commits
 
-### Option 2: Netlify Functions
+### Option 2: Fly.io (Free Tier - 100% Free)
 
-1. **Install Netlify CLI**:
+1. **Install Fly CLI** and sign up at fly.io
+2. **Run deployment command**:
    ```bash
-   npm install -g netlify-cli
+   fly launch
+   fly deploy
    ```
+3. **Free tier**: 3 shared-cpu-1x VMs, 160GB outbound data
+4. **Apps sleep after inactivity** but wake in seconds
+5. **No time limits** unlike other providers
 
-2. **Build and Deploy**:
-   ```bash
-   npm run build
-   netlify deploy --prod --dir=client/dist
-   ```
+### Option 3: Glitch.com (100% Free)
 
-### Option 3: Railway ($5/month)
+1. **Import from GitHub** at glitch.com
+2. **Automatic deployment** - no configuration needed
+3. **Free tier**: Project sleeps after 5min, wakes instantly
+4. **No monthly limits** on usage
 
-1. **Connect GitHub repository** to Railway
-2. **Add PostgreSQL addon** (included in plan)
-3. **Set environment variables** for database connection
-4. **Deploy** with persistent data storage
+### Why Vercel Failed
+
+Vercel's free tier doesn't handle full-stack Node.js apps well. It's designed for:
+- Static sites (React/Vue/etc)
+- Serverless functions (not full Express servers)
+
+Your Express app needs a traditional Node.js host, which is why Render.com or Fly.io work perfectly.
 
 ## Local Development
 
