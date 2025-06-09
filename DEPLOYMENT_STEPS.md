@@ -24,7 +24,7 @@ Ensure all files are committed and pushed to your GitHub repository.
 - Project name: `chorly`
 - Production branch: `main` (or your default branch)
 - Build command: `npx vite build`
-- Build output directory: `dist`
+- Build output directory: `dist/public`
 - Root directory: `/` (leave empty)
 
 ## Step 4: Set Environment Variables
