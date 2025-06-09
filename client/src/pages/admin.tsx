@@ -136,7 +136,9 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate specific queries for task creation
       queryClient.invalidateQueries({ queryKey: ["/api/admin/tasks", household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard", household?.id] });
       setShowTaskDialog(false);
       setEditingTask(null);
       toast({ title: "Task created successfully!" });
@@ -174,7 +176,9 @@ export default function Admin() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate specific queries without clearing cache
       queryClient.invalidateQueries({ queryKey: ["/api/admin/tasks", household?.id] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard", household?.id] });
       setShowTaskDialog(false);
       setEditingTask(null);
       toast({ title: "Task updated successfully!" });

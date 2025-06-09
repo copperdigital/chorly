@@ -45,7 +45,9 @@ export default function Dashboard() {
       return response.json();
     },
     onSuccess: (data, variables) => {
+      // Invalidate all dashboard queries with proper keys
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
+      queryClient.refetchQueries({ queryKey: ["/api/dashboard", household?.id, currentDate.toISOString().split('T')[0]] });
       
       if (data.pointsEarned) {
         setCelebrationData({
@@ -132,12 +134,13 @@ export default function Dashboard() {
       const currentDay = new Date(weekStart);
       currentDay.setDate(weekStart.getDate() + i);
       
-      // Filter tasks for this day
+      // Filter tasks for this day - exclude completed tasks
       const dayTasks = taskInstances.filter((task: any) => {
+        if (task.isCompleted) return false;
         const taskDate = new Date(task.dueDate);
         return (
           taskDate.toDateString() === currentDay.toDateString() &&
-          (!selectedPerson || task.assignedTo === selectedPerson.id)
+          (!selectedPersonId || task.assignedTo === selectedPersonId)
         );
       });
       
@@ -163,40 +166,19 @@ export default function Dashboard() {
     setCurrentDate(newDate);
   };
 
-  // Get tasks for display - show tasks for the selected date
-  const selectedDate = new Date(currentDate);
-  selectedDate.setHours(23, 59, 59, 999);
-  
+  // Get tasks for display - server already filters by date, just filter by person and completion
   const tasksToShow = (selectedPersonId 
     ? allTasks.filter((ti: any) => ti.assignedTo === selectedPersonId)
     : allTasks
   ).filter((ti: any) => {
-    // Only show incomplete tasks
-    if (ti.isCompleted) return false;
-    
-    // Show tasks that are due on the selected date
-    const dueDate = new Date(ti.dueDate);
-    const selectedDateStart = new Date(currentDate);
-    selectedDateStart.setHours(0, 0, 0, 0);
-    const selectedDateEnd = new Date(currentDate);
-    selectedDateEnd.setHours(23, 59, 59, 999);
-    
-    return dueDate >= selectedDateStart && dueDate <= selectedDateEnd;
+    // Only show incomplete tasks (server already filtered by date)
+    return !ti.isCompleted;
   });
 
-  // Calculate stats for each person - count tasks for the selected date
+  // Calculate stats for each person - server already filtered by date
   const peopleWithStats = people.map((person: any) => {
     const personTasks = allTasks.filter((ti: any) => {
-      if (ti.assignedTo !== person.id) return false;
-      
-      // Count tasks for the selected date
-      const dueDate = new Date(ti.dueDate);
-      const selectedDateStart = new Date(currentDate);
-      selectedDateStart.setHours(0, 0, 0, 0);
-      const selectedDateEnd = new Date(currentDate);
-      selectedDateEnd.setHours(23, 59, 59, 999);
-      
-      return dueDate >= selectedDateStart && dueDate <= selectedDateEnd;
+      return ti.assignedTo === person.id;
     });
     const completedTasks = personTasks.filter((ti: any) => ti.isCompleted);
     const incompleteTasks = personTasks.filter((ti: any) => !ti.isCompleted);

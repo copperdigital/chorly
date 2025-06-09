@@ -101,34 +101,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allTasks = await storage.getTasksByHousehold(householdIdNum);
       const activeTasks = allTasks.filter(task => task.isActive);
       
-      // Generate recurring task instances for the target date
+      // Generate task instances for the target date
       const generatedInstances = [];
       for (const task of activeTasks) {
-        if (task.isRecurring && task.dueDate) {
-          const taskDueDate = new Date(task.dueDate);
+        // Check if instance already exists
+        const existingInstance = existingInstances.find(inst => 
+          inst.taskId === task.id && 
+          inst.assignedTo === task.assignedTo
+        );
+        
+        if (!existingInstance) {
+          let shouldGenerate = false;
           
-          // Check if this recurring task should have an instance on the target date
-          if (shouldGenerateInstance(task, taskDueDate, targetDate)) {
-            // Check if instance already exists
-            const existingInstance = existingInstances.find(inst => 
-              inst.taskId === task.id && 
-              inst.assignedTo === task.assignedTo
-            );
-            
-            if (!existingInstance) {
-              generatedInstances.push({
-                id: `temp-${task.id}-${task.assignedTo}-${targetDate.getTime()}`,
-                taskId: task.id,
-                assignedTo: task.assignedTo,
-                isSecondary: false,
-                dueDate: targetDate,
-                completedAt: null,
-                isCompleted: false,
-                pointsEarned: 0,
-                isOverdue: targetDate < new Date(),
-                currentPriority: task.priority || 1
-              });
+          if (task.isRecurring) {
+            if (task.dueDate) {
+              const taskDueDate = new Date(task.dueDate);
+              shouldGenerate = shouldGenerateInstance(task, taskDueDate, targetDate);
+            } else {
+              // For recurring tasks without specific due dates, generate for every day
+              shouldGenerate = true;
             }
+          } else {
+            // For non-recurring tasks, check if they're due on the target date
+            if (task.dueDate) {
+              const taskDueDate = new Date(task.dueDate);
+              const targetDateStart = new Date(targetDate);
+              targetDateStart.setHours(0, 0, 0, 0);
+              const targetDateEnd = new Date(targetDate);
+              targetDateEnd.setHours(23, 59, 59, 999);
+              
+              shouldGenerate = taskDueDate >= targetDateStart && taskDueDate <= targetDateEnd;
+            }
+          }
+          
+          if (shouldGenerate) {
+            generatedInstances.push({
+              id: `temp-${task.id}-${task.assignedTo}-${targetDate.getTime()}`,
+              taskId: task.id,
+              assignedTo: task.assignedTo,
+              isSecondary: false,
+              dueDate: targetDate,
+              completedAt: null,
+              isCompleted: false,
+              pointsEarned: 0,
+              isOverdue: targetDate < new Date(),
+              currentPriority: task.priority || 1
+            });
           }
         }
       }
@@ -145,10 +163,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      const enrichedInstances = allInstances.map(instance => ({
-        ...instance,
-        task: tasksMap.get(instance.taskId)
-      }));
+      const enrichedInstances = allInstances
+        .filter(instance => {
+          // Only include instances that are due on the target date
+          const instanceDate = new Date(instance.dueDate);
+          const targetDateStart = new Date(targetDate);
+          targetDateStart.setHours(0, 0, 0, 0);
+          const targetDateEnd = new Date(targetDate);
+          targetDateEnd.setHours(23, 59, 59, 999);
+          
+          const isInRange = instanceDate >= targetDateStart && instanceDate <= targetDateEnd;
+          return isInRange;
+        })
+        .map(instance => {
+          const task = tasksMap.get(instance.taskId);
+          return {
+            ...instance,
+            task: task
+          };
+        });
 
       res.json({
         people,
@@ -290,7 +323,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const householdId = Number(req.params.householdId);
       const tasks = await storage.getTasksByHousehold(householdId);
-      console.log(`Fetching tasks for household ${householdId}, found ${tasks.length} tasks:`, tasks.map(t => ({ id: t.id, title: t.title, isActive: t.isActive })));
       res.json(tasks);
     } catch (error) {
       console.error("Failed to load tasks:", error);

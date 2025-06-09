@@ -11,14 +11,14 @@ interface TaskCardProps {
     isCompleted: boolean;
     isSecondary: boolean;
     pointsEarned: number;
-    task: {
+    task?: {
       id: number;
       title: string;
       description: string;
       estimatedMinutes: number;
       points: number;
       isRecurring: boolean;
-    };
+    } | null;
   };
   onComplete: () => void;
   onEdit?: (taskId: number) => void;
@@ -40,6 +40,18 @@ export default function TaskCard({
   lastCompletedDate,
 }: TaskCardProps) {
   const { task, isCompleted } = taskInstance;
+  
+  // Handle missing task data
+  if (!task) {
+    return (
+      <div className="flex items-center space-x-4 p-4 rounded-lg bg-red-50 border border-red-200">
+        <div className="text-red-600 font-medium">
+          Task Not Available (Instance ID: {taskInstance.id})
+        </div>
+      </div>
+    );
+  }
+  
   const points = isSecondary ? Math.floor(task.points * 0.5) : task.points;
   const { currentPerson } = useAuth();
 
