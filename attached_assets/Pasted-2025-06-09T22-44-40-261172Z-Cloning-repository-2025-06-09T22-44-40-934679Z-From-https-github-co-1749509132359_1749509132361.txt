@@ -1,0 +1,64 @@
+2025-06-09T22:44:40.261172Z	Cloning repository...
+2025-06-09T22:44:40.934679Z	From https://github.com/copperdigital/chorly
+2025-06-09T22:44:40.935132Z	 * branch            2492f5946e467169bdf8da6e626076732ef1f6bd -> FETCH_HEAD
+2025-06-09T22:44:40.935567Z	
+2025-06-09T22:44:40.964612Z	HEAD is now at 2492f59 Add files via upload
+2025-06-09T22:44:40.964967Z	
+2025-06-09T22:44:41.041309Z	
+2025-06-09T22:44:41.041734Z	Using v2 root directory strategy
+2025-06-09T22:44:41.063644Z	Success: Finished cloning repository files
+2025-06-09T22:44:42.730543Z	Checking for configuration in a Wrangler configuration file (BETA)
+2025-06-09T22:44:42.731266Z	
+2025-06-09T22:44:42.732903Z	Found wrangler.toml file. Reading build configuration...
+2025-06-09T22:44:42.739255Z	pages_build_output_dir: dist/public
+2025-06-09T22:44:42.739506Z	Build environment variables: (none found)
+2025-06-09T22:44:43.84717Z	Successfully read wrangler.toml file.
+2025-06-09T22:44:43.914962Z	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+2025-06-09T22:44:43.915602Z	Installing project dependencies: npm clean-install --progress=false
+2025-06-09T22:44:48.125369Z	npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-06-09T22:44:48.136891Z	npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-06-09T22:44:52.765576Z	
+2025-06-09T22:44:52.765812Z	added 481 packages, and audited 482 packages in 8s
+2025-06-09T22:44:52.765964Z	
+2025-06-09T22:44:52.766152Z	64 packages are looking for funding
+2025-06-09T22:44:52.766255Z	  run `npm fund` for details
+2025-06-09T22:44:52.793146Z	
+2025-06-09T22:44:52.793647Z	7 moderate severity vulnerabilities
+2025-06-09T22:44:52.793766Z	
+2025-06-09T22:44:52.793829Z	To address issues that do not require attention, run:
+2025-06-09T22:44:52.79416Z	  npm audit fix
+2025-06-09T22:44:52.794323Z	
+2025-06-09T22:44:52.794444Z	To address all issues (including breaking changes), run:
+2025-06-09T22:44:52.794561Z	  npm audit fix --force
+2025-06-09T22:44:52.794927Z	
+2025-06-09T22:44:52.795108Z	Run `npm audit` for details.
+2025-06-09T22:44:52.823287Z	Executing user command: npx vite build
+2025-06-09T22:44:53.751502Z	[36mvite v5.4.14 [32mbuilding for production...[36m[39m
+2025-06-09T22:44:53.799745Z	transforming...
+2025-06-09T22:44:54.08567Z	Browserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+2025-06-09T22:44:54.086239Z	  npx update-browserslist-db@latest
+2025-06-09T22:44:54.086424Z	  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-06-09T22:44:57.671734Z	[32m✓[39m 2062 modules transformed.
+2025-06-09T22:44:57.935796Z	rendering chunks...
+2025-06-09T22:44:57.944906Z	computing gzip size...
+2025-06-09T22:44:57.960899Z	[2m../dist/public/[22m[32mindex.html                 [39m[1m[2m  0.63 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+2025-06-09T22:44:57.961172Z	[2m../dist/public/[22m[2massets/[22m[35mindex-DlRnDyQH.css  [39m[1m[2m 68.93 kB[22m[1m[22m[2m │ gzip:  11.80 kB[22m
+2025-06-09T22:44:57.961295Z	[2m../dist/public/[22m[2massets/[22m[36mindex-Spa_qO1I.js   [39m[1m[2m496.03 kB[22m[1m[22m[2m │ gzip: 156.96 kB[22m
+2025-06-09T22:44:57.961458Z	[32m✓ built in 4.19s[39m
+2025-06-09T22:44:58.021175Z	Finished
+2025-06-09T22:44:58.94014Z	Checking for configuration in a Wrangler configuration file (BETA)
+2025-06-09T22:44:58.940655Z	
+2025-06-09T22:44:58.94152Z	Found wrangler.toml file. Reading build configuration...
+2025-06-09T22:44:58.94837Z	pages_build_output_dir: dist/public
+2025-06-09T22:44:58.9486Z	Build environment variables: (none found)
+2025-06-09T22:45:00.059925Z	Successfully read wrangler.toml file.
+2025-06-09T22:45:00.0611Z	Found Functions directory at /functions. Uploading.
+2025-06-09T22:45:00.067339Z	 ⛅️ wrangler 3.101.0
+2025-06-09T22:45:00.067575Z	-------------------
+2025-06-09T22:45:00.947137Z	
+2025-06-09T22:45:01.034968Z	[31m✘ [41;31m[[41;97mERROR[41;31m][0m [1mInvalid Pages function route parameter - "[...path]". Parameter names must only contain alphanumeric and underscore characters.[0m
+2025-06-09T22:45:01.035399Z	
+2025-06-09T22:45:01.035576Z	
+2025-06-09T22:45:01.092854Z	🪵  Logs were written to "/root/.config/.wrangler/logs/wrangler-2025-06-09_22-45-00_666.log"
+2025-06-09T22:45:01.103848Z	Failed building Pages Functions.
+2025-06-09T22:45:06.667279Z	Failed: generating Pages Functions failed. Check the logs above for more information. If this continues for an unknown reason, contact support: https://cfl.re/3WgEyrH
