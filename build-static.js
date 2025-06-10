@@ -136,6 +136,30 @@ const htmlContent = `<!DOCTYPE html>
                 \`;
                 
                 loadDashboard();
+            } else if (route === 'profile-select') {
+                const userData = JSON.parse(localStorage.getItem('user') || '{}');
+                root.innerHTML = \`
+                    <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+                        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+                            <h1 class="text-3xl font-bold text-center text-gray-900 mb-8">Select Your Profile</h1>
+                            <div class="space-y-4">
+                                \${userData.people?.map(person => \`
+                                    <div class="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer" onclick="selectProfile(\${person.id}, '\${person.nickname}')">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-12 h-12 rounded-full bg-\${person.avatar}-500 flex items-center justify-center text-white font-bold">
+                                                \${person.nickname.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <h3 class="font-semibold text-gray-900">\${person.nickname}</h3>
+                                                \${person.isAdmin ? '<span class="text-xs text-blue-600">Admin</span>' : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                \`).join('') || '<p class="text-gray-500 text-center">No family members found</p>'}
+                            </div>
+                        </div>
+                    </div>
+                \`;
             } else {
                 root.innerHTML = \`
                     <div class="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -152,7 +176,10 @@ const htmlContent = `<!DOCTYPE html>
         
         async function loadDashboard() {
             try {
-                const response = await fetch('/api/dashboard');
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+                const householdId = currentUser.household?.id || 1; // Default to demo household
+                
+                const response = await fetch(`/api/dashboard?householdId=${householdId}`);
                 const data = await response.json();
                 
                 const content = document.getElementById('dashboard-content');
@@ -240,6 +267,29 @@ const htmlContent = `<!DOCTYPE html>
         function quickLogin() {
             document.getElementById('email').value = 'family@example.com';
             document.getElementById('password').value = 'password123';
+        }
+
+        async function selectProfile(personId, nickname) {
+            const pin = prompt('Enter PIN for ' + nickname + ':');
+            if (!pin) return;
+
+            try {
+                const response = await fetch('/api/auth/profile-select', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ personId, pin })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    localStorage.setItem('currentUser', JSON.stringify(data));
+                    navigate('/');
+                } else {
+                    alert('Invalid PIN. Please try again.');
+                }
+            } catch (error) {
+                alert('Profile selection failed. Please try again.');
+            }
         }
 
         async function register(email, password, name) {

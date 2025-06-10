@@ -1,4 +1,13 @@
-<!DOCTYPE html>
+import fs from 'fs';
+import path from 'path';
+
+const buildDir = 'dist/public';
+
+if (!fs.existsSync(buildDir)) {
+  fs.mkdirSync(buildDir, { recursive: true });
+}
+
+const htmlContent = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -52,7 +61,7 @@
         
         function showLoginPage() {
             const root = document.getElementById('root');
-            root.innerHTML = `
+            root.innerHTML = \`
                 <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
                     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
                         <h1 class="text-3xl font-bold text-center text-gray-900 mb-8">Welcome to Chorly</h1>
@@ -87,7 +96,7 @@
                         </div>
                     </div>
                 </div>
-            `;
+            \`;
             
             document.getElementById('loginForm').onsubmit = handleLogin;
         }
@@ -96,7 +105,7 @@
             const userData = JSON.parse(localStorage.getItem('user') || '{}');
             const root = document.getElementById('root');
             
-            root.innerHTML = `
+            root.innerHTML = \`
                 <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
                     <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
                         <h1 class="text-3xl font-bold text-center text-gray-900 mb-8">Select Your Profile</h1>
@@ -104,7 +113,7 @@
                         </div>
                     </div>
                 </div>
-            `;
+            \`;
             
             const profileList = document.getElementById('profileList');
             if (userData.people && userData.people.length > 0) {
@@ -113,17 +122,17 @@
                     profileDiv.className = 'border rounded-lg p-4 hover:bg-gray-50 cursor-pointer';
                     profileDiv.onclick = () => selectProfile(person.id, person.nickname);
                     
-                    profileDiv.innerHTML = `
+                    profileDiv.innerHTML = \`
                         <div class="flex items-center space-x-3">
                             <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                                ${person.nickname.charAt(0)}
+                                \${person.nickname.charAt(0)}
                             </div>
                             <div>
-                                <h3 class="font-semibold text-gray-900">${person.nickname}</h3>
-                                ${person.isAdmin ? '<span class="text-xs text-blue-600">Admin</span>' : ''}
+                                <h3 class="font-semibold text-gray-900">\${person.nickname}</h3>
+                                \${person.isAdmin ? '<span class="text-xs text-blue-600">Admin</span>' : ''}
                             </div>
                         </div>
-                    `;
+                    \`;
                     
                     profileList.appendChild(profileDiv);
                 });
@@ -134,7 +143,7 @@
         
         function showDashboard() {
             const root = document.getElementById('root');
-            root.innerHTML = `
+            root.innerHTML = \`
                 <div class="min-h-screen bg-gray-50">
                     <nav class="bg-white shadow-sm border-b">
                         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -154,14 +163,14 @@
                         </div>
                     </main>
                 </div>
-            `;
+            \`;
             
             loadDashboard();
         }
         
         function showNotFound() {
             const root = document.getElementById('root');
-            root.innerHTML = `
+            root.innerHTML = \`
                 <div class="min-h-screen bg-gray-50 flex items-center justify-center">
                     <div class="text-center">
                         <h1 class="text-4xl font-bold text-gray-900 mb-4">Page Not Found</h1>
@@ -170,7 +179,7 @@
                         </button>
                     </div>
                 </div>
-            `;
+            \`;
         }
         
         async function handleLogin(e) {
@@ -225,34 +234,34 @@
                 const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
                 const householdId = currentUser.household?.id || 1;
                 
-                const response = await fetch(`/api/dashboard?householdId=${householdId}`);
+                const response = await fetch(\`/api/dashboard?householdId=\${householdId}\`);
                 const data = await response.json();
                 
                 const content = document.getElementById('dashboard-content');
-                content.innerHTML = `
+                content.innerHTML = \`
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <div class="bg-white rounded-lg shadow p-6">
                             <h2 class="text-xl font-semibold mb-4">Family Members</h2>
                             <div class="space-y-2">
-                                ${data.people.map(person => `
+                                \${data.people.map(person => \`
                                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                        <span class="font-medium">${person.nickname}</span>
-                                        <span class="text-sm text-gray-600">${person.totalPoints} pts</span>
+                                        <span class="font-medium">\${person.nickname}</span>
+                                        <span class="text-sm text-gray-600">\${person.totalPoints} pts</span>
                                     </div>
-                                `).join('')}
+                                \`).join('')}
                             </div>
                         </div>
                         <div class="bg-white rounded-lg shadow p-6">
                             <h2 class="text-xl font-semibold mb-4">Today's Tasks</h2>
                             <div class="space-y-2">
-                                ${data.taskInstances.map(task => `
+                                \${data.taskInstances.map(task => \`
                                     <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                        <span class="font-medium">${task.task?.title || 'Task'}</span>
-                                        <button onclick="completeTask(${task.id})" class="text-green-600 hover:text-green-800">
-                                            ${task.isCompleted ? '✓' : 'Complete'}
+                                        <span class="font-medium">\${task.task?.title || 'Task'}</span>
+                                        <button onclick="completeTask(\${task.id})" class="text-green-600 hover:text-green-800">
+                                            \${task.isCompleted ? '✓' : 'Complete'}
                                         </button>
                                     </div>
-                                `).join('')}
+                                \`).join('')}
                             </div>
                         </div>
                         <div class="bg-white rounded-lg shadow p-6">
@@ -264,16 +273,16 @@
                             </div>
                         </div>
                     </div>
-                `;
+                \`;
             } catch (error) {
-                document.getElementById('dashboard-content').innerHTML = `
+                document.getElementById('dashboard-content').innerHTML = \`
                     <div class="text-center py-12">
                         <p class="text-red-600 mb-4">Failed to load dashboard</p>
                         <button onclick="navigate('/login')" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
                             Go to Login
                         </button>
                     </div>
-                `;
+                \`;
             }
         }
         
@@ -343,4 +352,8 @@
         }
     </script>
 </body>
-</html>
+</html>`;
+
+fs.writeFileSync(path.join(buildDir, 'index.html'), htmlContent);
+console.log('Static build completed successfully!');
+console.log('Created:', path.join(buildDir, 'index.html'));
