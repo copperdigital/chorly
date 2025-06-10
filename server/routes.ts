@@ -110,8 +110,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/verify-admin-pin", async (req, res) => {
     try {
-      const { pin } = adminPinSchema.parse(req.body);
-      const { personId } = req.query;
+      const { pin, personId } = req.body;
       
       if (!personId) {
         return res.status(400).json({ message: "Person ID required" });
@@ -144,13 +143,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const people = await storage.getPeopleByHousehold(householdIdNum);
       
-      // Get existing task instances for the date
+      // Get existing task instances for the date and overdue tasks
       const startOfDay = new Date(targetDate);
       startOfDay.setHours(0, 0, 0, 0);
       const endOfDay = new Date(targetDate);
       endOfDay.setHours(23, 59, 59, 999);
       
-      const existingInstances = await storage.getTaskInstancesByDateRange(householdIdNum, startOfDay, endOfDay);
+      // Get tasks for today
+      const todayInstances = await storage.getTaskInstancesByDateRange(householdIdNum, startOfDay, endOfDay);
+      
+      // Get overdue tasks (incomplete tasks from previous days)
+      const overdueStart = new Date('2020-01-01'); // Far past date
+      const overdueEnd = new Date(startOfDay.getTime() - 1); // End of yesterday
+      const overdueInstances = await storage.getTaskInstancesByDateRange(householdIdNum, overdueStart, overdueEnd);
+      const incompleteOverdueInstances = overdueInstances.filter(instance => !instance.isCompleted);
+      
+      const existingInstances = [...todayInstances, ...incompleteOverdueInstances];
       
       // Get all active tasks to generate recurring instances
       const allTasks = await storage.getTasksByHousehold(householdIdNum);
@@ -220,22 +228,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const enrichedInstances = allInstances
         .filter(instance => {
-          // Only include instances that are due on the target date
+          // Include tasks for today or overdue incomplete tasks
           const instanceDate = new Date(instance.dueDate);
           const targetDateStart = new Date(targetDate);
           targetDateStart.setHours(0, 0, 0, 0);
           const targetDateEnd = new Date(targetDate);
           targetDateEnd.setHours(23, 59, 59, 999);
           
-          const isInRange = instanceDate >= targetDateStart && instanceDate <= targetDateEnd;
-          return isInRange;
+          const isToday = instanceDate >= targetDateStart && instanceDate <= targetDateEnd;
+          const isOverdue = instanceDate < targetDateStart && !instance.isCompleted;
+          
+          return isToday || isOverdue;
         })
         .map(instance => {
           const task = tasksMap.get(instance.taskId);
+          const instanceDate = new Date(instance.dueDate);
+          const targetDateStart = new Date(targetDate);
+          targetDateStart.setHours(0, 0, 0, 0);
+          const isOverdue = instanceDate < targetDateStart && !instance.isCompleted;
+          
           return {
             ...instance,
+            isOverdue: isOverdue,
             task: task
           };
+        })
+        .sort((a, b) => {
+          // Sort overdue tasks first, then by due date
+          if (a.isOverdue && !b.isOverdue) return -1;
+          if (!a.isOverdue && b.isOverdue) return 1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
         });
 
       res.json({

@@ -34,8 +34,7 @@ const htmlContent = `<!DOCTYPE html>
         const routes = {
             '/': 'dashboard',
             '/login': 'login',
-            '/admin': 'admin',
-            '/profile-select': 'profile-select'
+            '/admin': 'admin'
         };
         
         function navigate(path) {
@@ -50,8 +49,6 @@ const htmlContent = `<!DOCTYPE html>
             
             if (route === 'login') {
                 showLoginPage();
-            } else if (route === 'profile-select') {
-                showProfileSelect();
             } else if (route === 'dashboard') {
                 showDashboard();
             } else {
@@ -90,9 +87,7 @@ const htmlContent = `<!DOCTYPE html>
                             <button onclick="quickLogin()" class="mt-2 bg-blue-100 text-blue-800 px-3 py-1 rounded text-sm hover:bg-blue-200">
                                 Use Demo Login
                             </button>
-                            <div class="mt-2 text-xs text-blue-600">
-                                <p>Demo PINs: Dad(1234), Mum(5678), Seb(9999), Tessa(1111)</p>
-                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -101,45 +96,7 @@ const htmlContent = `<!DOCTYPE html>
             document.getElementById('loginForm').onsubmit = handleLogin;
         }
         
-        function showProfileSelect() {
-            const userData = JSON.parse(localStorage.getItem('user') || '{}');
-            const root = document.getElementById('root');
-            
-            root.innerHTML = \`
-                <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-                    <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
-                        <h1 class="text-3xl font-bold text-center text-gray-900 mb-8">Select Your Profile</h1>
-                        <div class="space-y-4" id="profileList">
-                        </div>
-                    </div>
-                </div>
-            \`;
-            
-            const profileList = document.getElementById('profileList');
-            if (userData.people && userData.people.length > 0) {
-                userData.people.forEach(person => {
-                    const profileDiv = document.createElement('div');
-                    profileDiv.className = 'border rounded-lg p-4 hover:bg-gray-50 cursor-pointer';
-                    profileDiv.onclick = () => selectProfile(person.id, person.nickname);
-                    
-                    profileDiv.innerHTML = \`
-                        <div class="flex items-center space-x-3">
-                            <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-                                \${person.nickname.charAt(0)}
-                            </div>
-                            <div>
-                                <h3 class="font-semibold text-gray-900">\${person.nickname}</h3>
-                                \${person.isAdmin ? '<span class="text-xs text-blue-600">Admin</span>' : ''}
-                            </div>
-                        </div>
-                    \`;
-                    
-                    profileList.appendChild(profileDiv);
-                });
-            } else {
-                profileList.innerHTML = '<p class="text-gray-500 text-center">No family members found</p>';
-            }
-        }
+
         
         function showDashboard() {
             const root = document.getElementById('root');
@@ -197,7 +154,7 @@ const htmlContent = `<!DOCTYPE html>
                 if (response.ok) {
                     const data = await response.json();
                     localStorage.setItem('user', JSON.stringify(data));
-                    navigate('/profile-select');
+                    navigate('/');
                 } else {
                     alert('Login failed. Please check your credentials.');
                 }
@@ -206,33 +163,12 @@ const htmlContent = `<!DOCTYPE html>
             }
         }
         
-        async function selectProfile(personId, nickname) {
-            const pin = prompt('Enter PIN for ' + nickname + ':');
-            if (!pin) return;
 
-            try {
-                const response = await fetch('/api/auth/profile-select', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ personId, pin })
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    localStorage.setItem('currentUser', JSON.stringify(data));
-                    navigate('/');
-                } else {
-                    alert('Invalid PIN. Please try again.');
-                }
-            } catch (error) {
-                alert('Profile selection failed. Please try again.');
-            }
-        }
         
         async function loadDashboard() {
             try {
-                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-                const householdId = currentUser.household?.id || 1;
+                const userData = JSON.parse(localStorage.getItem('user') || '{}');
+                const householdId = userData.householdId || 1;
                 
                 const response = await fetch(\`/api/dashboard?householdId=\${householdId}\`);
                 const data = await response.json();
@@ -255,8 +191,11 @@ const htmlContent = `<!DOCTYPE html>
                             <h2 class="text-xl font-semibold mb-4">Today's Tasks</h2>
                             <div class="space-y-2">
                                 \${data.taskInstances.map(task => \`
-                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-                                        <span class="font-medium">\${task.task?.title || 'Task'}</span>
+                                    <div class="flex items-center justify-between p-3 \${task.isOverdue ? 'bg-red-50 border-l-4 border-red-500' : 'bg-gray-50'} rounded">
+                                        <div>
+                                            <span class="font-medium \${task.isOverdue ? 'text-red-800' : ''}">\${task.task?.title || 'Task'}</span>
+                                            \${task.isOverdue ? '<div class="text-xs text-red-600 mt-1">Overdue</div>' : ''}
+                                        </div>
                                         <button onclick="completeTask(\${task.id})" class="text-green-600 hover:text-green-800">
                                             \${task.isCompleted ? '✓' : 'Complete'}
                                         </button>
@@ -337,7 +276,6 @@ const htmlContent = `<!DOCTYPE html>
         
         function logout() {
             localStorage.removeItem('user');
-            localStorage.removeItem('currentUser');
             navigate('/login');
         }
         
