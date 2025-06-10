@@ -18,7 +18,7 @@ git push origin main
 - Use these exact settings:
 
 **Build Settings:**
-- Build command: `node build-static.js`
+- Build command: `node build-static-fixed.js`
 - Build output directory: `dist/public`
 - Functions: ENABLED
 
