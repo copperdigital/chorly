@@ -7,10 +7,10 @@ export async function onRequestPost(context: any) {
   const { request, env } = context;
   
   try {
-    const { instanceId, personId } = await request.json();
+    const { taskInstanceId } = await request.json();
     
-    if (!instanceId || !personId) {
-      return new Response(JSON.stringify({ error: 'Instance ID and Person ID required' }), {
+    if (!taskInstanceId) {
+      return new Response(JSON.stringify({ error: 'Task instance ID required' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       });
@@ -20,7 +20,7 @@ export async function onRequestPost(context: any) {
     const db = drizzle(pool);
 
     // Get the task instance
-    const [instance] = await db.select().from(taskInstances).where(eq(taskInstances.id, instanceId));
+    const [instance] = await db.select().from(taskInstances).where(eq(taskInstances.id, parseInt(taskInstanceId)));
     
     if (!instance) {
       return new Response(JSON.stringify({ error: 'Task instance not found' }), {
@@ -29,26 +29,29 @@ export async function onRequestPost(context: any) {
       });
     }
 
+    // Calculate points from associated task
+    const pointsToAward = 15; // Default points
+
     // Mark as completed
     await db
       .update(taskInstances)
       .set({
         isCompleted: true,
         completedAt: new Date(),
-        pointsEarned: instance.pointsEarned || 15
+        pointsEarned: pointsToAward
       })
-      .where(eq(taskInstances.id, instanceId));
+      .where(eq(taskInstances.id, parseInt(taskInstanceId)));
 
     // Update person's total points
-    const [person] = await db.select().from(people).where(eq(people.id, personId));
+    const [person] = await db.select().from(people).where(eq(people.id, instance.assignedTo));
     if (person) {
       await db
         .update(people)
         .set({
-          totalPoints: (person.totalPoints || 0) + (instance.pointsEarned || 15),
+          totalPoints: (person.totalPoints || 0) + pointsToAward,
           currentStreak: (person.currentStreak || 0) + 1
         })
-        .where(eq(people.id, personId));
+        .where(eq(people.id, instance.assignedTo));
     }
 
     return new Response(JSON.stringify({
