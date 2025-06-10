@@ -2,6 +2,9 @@ name = "chorly"
 compatibility_date = "2024-03-15"
 pages_build_output_dir = "dist/public"
 
+[build]
+command = "node build-static.js"
+
 [env.production]
 name = "chorly"
 vars = { NODE_ENV = "production" }

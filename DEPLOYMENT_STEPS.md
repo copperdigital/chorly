@@ -28,7 +28,7 @@ Ensure all files are committed and pushed to your GitHub repository.
 **Build Configuration:**
 - Project name: `chorly`
 - Production branch: `main` (or your default branch)  
-- Build command: `npm run build`
+- Build command: `node build-static.js`
 - Build output directory: `dist/public`
 - Root directory: `/` (leave empty)
 - Functions: **ENABLED** (serverless functions in /functions folder)
