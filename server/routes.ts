@@ -53,6 +53,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const { email, password, name } = req.body;
+      
+      if (!email || !password || !name) {
+        return res.status(400).json({ success: false, error: 'Email, password, and name required' });
+      }
+
+      // Check if household already exists
+      const existingHousehold = await storage.getHouseholdByEmail(email);
+      if (existingHousehold) {
+        return res.status(400).json({ success: false, error: 'Email already registered' });
+      }
+
+      // Create household
+      const household = await storage.createHousehold({
+        name,
+        email,
+        password
+      });
+
+      // Create default admin user
+      const adminPerson = await storage.createPerson({
+        householdId: household.id,
+        nickname: 'Admin',
+        pin: '0000',
+        isAdmin: true,
+        avatar: 'blue',
+        currentStreak: 0,
+        totalPoints: 0
+      });
+
+      res.status(201).json({
+        success: true,
+        household: {
+          id: household.id,
+          name: household.name,
+          email: household.email
+        },
+        people: [{
+          id: adminPerson.id,
+          nickname: adminPerson.nickname,
+          avatar: adminPerson.avatar,
+          isAdmin: adminPerson.isAdmin,
+          currentStreak: adminPerson.currentStreak,
+          totalPoints: adminPerson.totalPoints
+        }]
+      });
+
+    } catch (error) {
+      console.error('Registration error:', error);
+      res.status(500).json({ success: false, error: 'Registration failed' });
+    }
+  });
+
   app.post("/api/auth/verify-admin-pin", async (req, res) => {
     try {
       const { pin } = adminPinSchema.parse(req.body);
