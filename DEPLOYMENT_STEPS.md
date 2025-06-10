@@ -20,12 +20,18 @@ Ensure all files are committed and pushed to your GitHub repository.
 
 ## Step 3: Configure Build Settings
 
+**IMPORTANT: Before deploying, you MUST update your GitHub repository**
+
+1. First, delete the entire `functions` folder from your GitHub repository
+2. Then use these build settings:
+
 **Build Configuration:**
 - Project name: `chorly`
-- Production branch: `main` (or your default branch)
+- Production branch: `main` (or your default branch)  
 - Build command: `npx vite build`
 - Build output directory: `dist/public`
 - Root directory: `/` (leave empty)
+- Functions: **DISABLED** (no functions folder)
 
 ## Step 4: Set Environment Variables
 

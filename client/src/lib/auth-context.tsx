@@ -61,6 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await apiRequest("POST", "/api/auth/login", { email, password });
       const data = await response.json();
 
+      if (!data.success) {
+        return { success: false, error: data.error || "Invalid credentials" };
+      }
+
       const newState = {
         household: data.household,
         people: data.people,

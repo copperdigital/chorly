@@ -41,7 +41,7 @@ export default function Dashboard() {
 
   const completeTaskMutation = useMutation({
     mutationFn: async ({ instanceId, personId }: { instanceId: number; personId: number }) => {
-      const response = await apiRequest("POST", `/api/tasks/${instanceId}/complete`, { personId });
+      const response = await apiRequest("POST", `/api/tasks/complete`, { instanceId, personId });
       return response.json();
     },
     onSuccess: (data, variables) => {
@@ -52,7 +52,7 @@ export default function Dashboard() {
       if (data.pointsEarned) {
         setCelebrationData({
           points: data.pointsEarned,
-          taskTitle: "Task completed!"
+          taskTitle: data.taskTitle
         });
         setShowCelebration(true);
         setTimeout(() => setShowCelebration(false), 3000);
