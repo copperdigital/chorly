@@ -1,7 +1,15 @@
+import { Pool } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import { people } from '../../../shared/schema';
+import { eq } from 'drizzle-orm';
+
 export async function onRequestPost(context: any) {
   try {
-    const { request } = context;
-    const { pin, personId } = await request.json();
+    const pool = new Pool({ connectionString: context.env.DATABASE_URL });
+    const db = drizzle(pool);
+    
+    const body = await context.request.json();
+    const { pin, personId } = body;
     
     if (!personId) {
       return new Response(JSON.stringify({ message: "Person ID required" }), {
@@ -10,15 +18,7 @@ export async function onRequestPost(context: any) {
       });
     }
 
-    // Mock person data - Dad has PIN 1234
-    const people = [
-      { id: 1, isAdmin: true, pin: '1234' },
-      { id: 2, isAdmin: false, pin: '5678' },
-      { id: 3, isAdmin: false, pin: '9999' },
-      { id: 4, isAdmin: false, pin: '1111' }
-    ];
-    
-    const person = people.find(p => p.id === Number(personId));
+    const [person] = await db.select().from(people).where(eq(people.id, Number(personId)));
     
     if (!person || !person.isAdmin || person.pin !== pin) {
       return new Response(JSON.stringify({ message: "Invalid admin PIN" }), {
@@ -28,7 +28,6 @@ export async function onRequestPost(context: any) {
     }
 
     return new Response(JSON.stringify({ success: true }), {
-      status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
     

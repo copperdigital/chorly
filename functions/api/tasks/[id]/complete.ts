@@ -1,22 +1,19 @@
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
-import { tasks, taskInstances, people } from '../../shared/schema';
-import { eq } from 'drizzle-orm';
+import { tasks, taskInstances, people } from '../../../../shared/schema';
+import { eq, and, gte, lte } from 'drizzle-orm';
 
 export async function onRequestPost(context: any) {
   try {
     const pool = new Pool({ connectionString: context.env.DATABASE_URL });
     const db = drizzle(pool);
     
-    const body = await context.request.json();
-    const { instanceId, personId } = body;
+    // Extract task instance ID from URL params
+    const { id } = context.params;
+    const instanceId = Number(id);
     
-    if (!instanceId) {
-      return new Response(JSON.stringify({ message: "Instance ID required" }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
+    const body = await context.request.json();
+    const { personId } = body;
     
     // Get task instance
     const [instance] = await db.select().from(taskInstances).where(eq(taskInstances.id, instanceId));
@@ -64,7 +61,13 @@ export async function onRequestPost(context: any) {
       const todayInstances = await db.select()
         .from(taskInstances)
         .innerJoin(tasks, eq(taskInstances.taskId, tasks.id))
-        .where(eq(tasks.householdId, task.householdId));
+        .where(
+          and(
+            eq(tasks.householdId, task.householdId),
+            gte(taskInstances.dueDate, today),
+            lte(taskInstances.dueDate, todayEnd)
+          )
+        );
         
       const primaryInstancesForPerson = todayInstances.filter(ti => 
         ti.task_instances.assignedTo === personId && !ti.task_instances.isSecondary
@@ -100,24 +103,18 @@ export async function onRequestPost(context: any) {
         .where(eq(people.id, personId));
     }
 
-    return new Response(JSON.stringify(updatedInstance), {
+    return new Response(JSON.stringify({
+      ...updatedInstance,
+      taskTitle: task.title
+    }), {
       headers: { 'Content-Type': 'application/json' }
     });
     
   } catch (error) {
+    console.error('Task completion error:', error);
     return new Response(JSON.stringify({ message: "Failed to complete task" }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-}
-
-export async function onRequestOPTIONS() {
-  return new Response(null, {
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    }
-  });
 }

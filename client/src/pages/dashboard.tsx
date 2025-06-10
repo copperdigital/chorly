@@ -41,7 +41,7 @@ export default function Dashboard() {
 
   const completeTaskMutation = useMutation({
     mutationFn: async ({ instanceId, personId }: { instanceId: number; personId: number }) => {
-      const response = await apiRequest("POST", `/api/tasks/complete`, { instanceId, personId });
+      const response = await apiRequest("POST", `/api/tasks/${instanceId}/complete`, { personId });
       return response.json();
     },
     onSuccess: (data, variables) => {
@@ -393,17 +393,37 @@ export default function Dashboard() {
                         {/* Show person info only in "all tasks" view */}
                         {!selectedPerson && (
                           <div className="flex items-center space-x-3">
-                            <div className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center",
-                              getAvatarClass(taskPerson?.avatar || "")
-                            )}>
-                              <span className="text-white font-semibold">
-                                {getInitial(taskPerson?.nickname || "")}
-                              </span>
+                            <div className="flex -space-x-2">
+                              {/* Primary assignee */}
+                              <div className={cn(
+                                "w-10 h-10 rounded-full flex items-center justify-center border-2 border-white",
+                                getAvatarClass(taskPerson?.avatar || "")
+                              )}>
+                                <span className="text-white font-semibold text-xs">
+                                  {getInitial(taskPerson?.nickname || "")}
+                                </span>
+                              </div>
+                              {/* Secondary assignees */}
+                              {taskInstance.task?.secondaryAssignees?.map((assigneeId: number, index: number) => {
+                                const secondaryPerson = people.find(p => p.id === assigneeId);
+                                return secondaryPerson ? (
+                                  <div key={assigneeId} className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center border-2 border-white",
+                                    getAvatarClass(secondaryPerson.avatar)
+                                  )}>
+                                    <span className="text-white font-semibold text-xs">
+                                      {getInitial(secondaryPerson.nickname)}
+                                    </span>
+                                  </div>
+                                ) : null;
+                              })}
                             </div>
                             <div>
                               <div className="text-sm font-medium text-slate-700">
                                 {taskPerson?.nickname}
+                                {taskInstance.task?.secondaryAssignees?.length > 0 && 
+                                  ` +${taskInstance.task.secondaryAssignees.length}`
+                                }
                               </div>
                             </div>
                           </div>
@@ -464,16 +484,36 @@ export default function Dashboard() {
                           )}>
                             {!selectedPerson && (
                               <div className="flex items-center space-x-2">
-                                <div className={cn(
-                                  "w-8 h-8 rounded-full flex items-center justify-center",
-                                  getAvatarClass(taskPerson?.avatar || "")
-                                )}>
-                                  <span className="text-white text-sm font-semibold">
-                                    {getInitial(taskPerson?.nickname || "")}
-                                  </span>
+                                <div className="flex -space-x-1">
+                                  {/* Primary assignee */}
+                                  <div className={cn(
+                                    "w-8 h-8 rounded-full flex items-center justify-center border-2 border-white",
+                                    getAvatarClass(taskPerson?.avatar || "")
+                                  )}>
+                                    <span className="text-white text-sm font-semibold">
+                                      {getInitial(taskPerson?.nickname || "")}
+                                    </span>
+                                  </div>
+                                  {/* Secondary assignees */}
+                                  {taskInstance.task?.secondaryAssignees?.map((assigneeId: number) => {
+                                    const secondaryPerson = people.find(p => p.id === assigneeId);
+                                    return secondaryPerson ? (
+                                      <div key={assigneeId} className={cn(
+                                        "w-6 h-6 rounded-full flex items-center justify-center border-2 border-white",
+                                        getAvatarClass(secondaryPerson.avatar)
+                                      )}>
+                                        <span className="text-white font-bold text-xs">
+                                          {getInitial(secondaryPerson.nickname)}
+                                        </span>
+                                      </div>
+                                    ) : null;
+                                  })}
                                 </div>
                                 <span className="text-sm font-medium text-slate-700">
                                   {taskPerson?.nickname}
+                                  {taskInstance.task?.secondaryAssignees?.length > 0 && 
+                                    ` +${taskInstance.task.secondaryAssignees.length}`
+                                  }
                                 </span>
                               </div>
                             )}

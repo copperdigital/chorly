@@ -144,22 +144,33 @@ export default function TaskCard({
             {formatDuration(task.estimatedMinutes)}
           </span>
           
-          <span className={cn(
-            "text-xs font-medium",
-            isCompleted 
-              ? "text-secondary" 
-              : canComplete 
-                ? "text-primary" 
-                : "text-slate-400"
-          )}>
-            {isCompleted 
-              ? "✓ Completed" 
-              : canComplete 
-                ? "Tap to complete" 
-                : isSecondary && !primaryComplete
-                  ? "Complete primary tasks first"
-                  : "Not available"}
-          </span>
+          {isCompleted && currentPerson?.isAdmin ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs font-medium text-green-600 bg-green-50 hover:bg-green-100"
+              disabled
+            >
+              DONE
+            </Button>
+          ) : (
+            <span className={cn(
+              "text-xs font-medium",
+              isCompleted 
+                ? "text-secondary" 
+                : canComplete 
+                  ? "text-primary" 
+                  : "text-slate-400"
+            )}>
+              {isCompleted 
+                ? "✓ Completed" 
+                : canComplete 
+                  ? "Tap to complete" 
+                  : isSecondary && !primaryComplete
+                    ? "Complete primary tasks first"
+                    : "Not available"}
+            </span>
+          )}
         </div>
       </div>
     </div>

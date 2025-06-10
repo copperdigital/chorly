@@ -27,6 +27,7 @@ export default function Admin() {
   const [editingPerson, setEditingPerson] = useState<any>(null);
   const [editingTask, setEditingTask] = useState<any>(null);
   const [editingReward, setEditingReward] = useState<any>(null);
+  const [returnToDashboard, setReturnToDashboard] = useState(false);
   
   const { household, currentPerson } = useAuth();
   const { toast } = useToast();
@@ -75,6 +76,7 @@ export default function Admin() {
         setActiveTab('tasks');
         setEditingTask(taskToEdit);
         setShowTaskDialog(true);
+        setReturnToDashboard(true); // Flag to return to dashboard after edit
         // Clear the URL parameter
         window.history.replaceState({}, '', '/admin');
       }
@@ -116,7 +118,7 @@ export default function Admin() {
         description: data.description,
         estimatedMinutes: Number(data.estimatedMinutes),
         points: Number(data.points),
-        assignedTo: Number(data.assignedTo),
+        assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo[0] : Number(data.assignedTo),
         isRecurring: Boolean(data.isRecurring),
         recurrenceType: data.isRecurring ? data.recurrenceType : null,
         recurrenceInterval: data.isRecurring ? Number(data.recurrenceInterval) : null,
@@ -124,7 +126,7 @@ export default function Admin() {
         dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
         startDate: null,
         endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
-        secondaryAssignees: [],
+        secondaryAssignees: Array.isArray(data.assignedTo) ? data.assignedTo.slice(1) : [],
         isActive: true,
         dueDateType: "by_date",
         priority: 1,
@@ -157,7 +159,7 @@ export default function Admin() {
         description: data.description,
         estimatedMinutes: Number(data.estimatedMinutes),
         points: Number(data.points),
-        assignedTo: Number(data.assignedTo),
+        assignedTo: Array.isArray(data.assignedTo) ? data.assignedTo[0] : Number(data.assignedTo),
         isRecurring: Boolean(data.isRecurring),
         recurrenceType: data.isRecurring ? data.recurrenceType : null,
         recurrenceInterval: data.isRecurring ? Number(data.recurrenceInterval) : null,
@@ -165,7 +167,7 @@ export default function Admin() {
         dueDate: data.dueDate ? new Date(data.dueDate).toISOString() : null,
         startDate: null,
         endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
-        secondaryAssignees: [],
+        secondaryAssignees: Array.isArray(data.assignedTo) ? data.assignedTo.slice(1) : [],
         isActive: true,
         dueDateType: "by_date",
         priority: 1,
@@ -181,6 +183,13 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard", household?.id] });
       setShowTaskDialog(false);
       setEditingTask(null);
+      
+      // Navigate back to dashboard if edit came from dashboard
+      if (returnToDashboard) {
+        setReturnToDashboard(false);
+        setLocation("/");
+      }
+      
       toast({ title: "Task updated successfully!" });
     },
     onError: (error: any) => {
@@ -276,7 +285,8 @@ export default function Admin() {
       description: task?.description || "",
       estimatedMinutes: task?.estimatedMinutes || 5,
       points: task?.points || 10,
-      assignedTo: task?.assignedTo || (people && people.length > 0 ? people[0].id : 0),
+      assignedTo: task?.assignedTo ? [task.assignedTo] : (people && people.length > 0 ? [people[0].id] : []),
+      secondaryAssignees: task?.secondaryAssignees || [],
       isRecurring: task?.isRecurring || false,
       recurrenceType: task?.recurrenceType || "daily",
       recurrenceInterval: task?.recurrenceInterval || 1,
@@ -293,7 +303,8 @@ export default function Admin() {
         description: task?.description || "",
         estimatedMinutes: task?.estimatedMinutes || 5,
         points: task?.points || 10,
-        assignedTo: task?.assignedTo || (people && people.length > 0 ? people[0].id : 0),
+        assignedTo: task?.assignedTo ? [task.assignedTo] : (people && people.length > 0 ? [people[0].id] : []),
+        secondaryAssignees: task?.secondaryAssignees || [],
         isRecurring: task?.isRecurring || false,
         recurrenceType: task?.recurrenceType || "daily",
         recurrenceInterval: task?.recurrenceInterval || 1,
@@ -353,19 +364,43 @@ export default function Admin() {
           </div>
         </div>
         <div>
-          <Label htmlFor="assignedTo">Assigned To</Label>
-          <Select value={String(formData.assignedTo)} onValueChange={(value) => setFormData({ ...formData, assignedTo: Number(value) })}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {people?.map((person: any) => (
-                <SelectItem key={person.id} value={String(person.id)}>
-                  {person.nickname}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Label>Assigned To</Label>
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            {people?.map((person: any) => (
+              <div key={person.id} className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`person-${person.id}`}
+                  checked={formData.assignedTo.includes(person.id)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setFormData({ 
+                        ...formData, 
+                        assignedTo: [...formData.assignedTo, person.id] 
+                      });
+                    } else {
+                      setFormData({ 
+                        ...formData, 
+                        assignedTo: formData.assignedTo.filter(id => id !== person.id) 
+                      });
+                    }
+                  }}
+                  className="rounded border-gray-300"
+                />
+                <label htmlFor={`person-${person.id}`} className="text-sm font-medium">
+                  <div className="flex items-center space-x-2">
+                    <div className={cn(
+                      "w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold",
+                      getAvatarClass(person.avatar)
+                    )}>
+                      {getInitial(person.nickname)}
+                    </div>
+                    <span>{person.nickname}</span>
+                  </div>
+                </label>
+              </div>
+            ))}
+          </div>
         </div>
         <div>
           <Label htmlFor="dueDate">Due Date</Label>

@@ -1,12 +1,15 @@
 import { Pool } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { households, people } from '../../../shared/schema';
+import { eq } from 'drizzle-orm';
 
 export async function onRequestPost(context: any) {
-  const { request, env } = context;
-  
   try {
-    const { email, password, name } = await request.json();
+    const pool = new Pool({ connectionString: context.env.DATABASE_URL });
+    const db = drizzle(pool);
+    
+    const body = await context.request.json();
+    const { email, password, name } = body;
     
     if (!email || !password || !name) {
       return new Response(JSON.stringify({ success: false, error: 'Email, password, and name required' }), {
@@ -15,8 +18,14 @@ export async function onRequestPost(context: any) {
       });
     }
 
-    const pool = new Pool({ connectionString: env.DATABASE_URL });
-    const db = drizzle(pool);
+    // Check if household already exists
+    const [existingHousehold] = await db.select().from(households).where(eq(households.email, email));
+    if (existingHousehold) {
+      return new Response(JSON.stringify({ success: false, error: 'Email already registered' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     // Create household
     const [household] = await db.insert(households).values({
@@ -53,10 +62,7 @@ export async function onRequestPost(context: any) {
       }]
     }), {
       status: 201,
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
+      headers: { 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
