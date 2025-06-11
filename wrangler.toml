@@ -1,9 +1,9 @@
 name = "chorly"
 compatibility_date = "2023-10-30"
+pages_build_output_dir = "dist"
 
 [build]
 command = "npx vite build"
-cwd = ""
 
 [[env.production.vars]]
 NODE_ENV = "production"
