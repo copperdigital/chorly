@@ -1,0 +1,68 @@
+2025-06-11T18:43:56.143544198Z	Cloning repository...
+2025-06-11T18:43:56.764102081Z	From https://github.com/copperdigital/chorly
+2025-06-11T18:43:56.764494883Z	 * branch            c7f4d3673edad7397e4168ec1be7138a93702602 -> FETCH_HEAD
+2025-06-11T18:43:56.764519024Z	
+2025-06-11T18:43:56.794975222Z	HEAD is now at c7f4d36 Complete Rebuild
+2025-06-11T18:43:56.795255245Z	
+2025-06-11T18:43:56.874187687Z	
+2025-06-11T18:43:56.87452965Z	Using v2 root directory strategy
+2025-06-11T18:43:56.895498674Z	Success: Finished cloning repository files
+2025-06-11T18:43:58.621120474Z	Checking for configuration in a Wrangler configuration file (BETA)
+2025-06-11T18:43:58.621172431Z	
+2025-06-11T18:43:59.721191279Z	No wrangler.toml file found. Continuing.
+2025-06-11T18:43:59.790667543Z	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+2025-06-11T18:43:59.790703137Z	Installing project dependencies: npm clean-install --progress=false
+2025-06-11T18:44:03.996668151Z	npm warn deprecated @esbuild-kit/esm-loader@2.6.5: Merged into tsx: https://tsx.is
+2025-06-11T18:44:04.038263028Z	npm warn deprecated @esbuild-kit/core-utils@3.3.2: Merged into tsx: https://tsx.is
+2025-06-11T18:44:09.225086404Z	
+2025-06-11T18:44:09.22529916Z	added 501 packages, and audited 502 packages in 9s
+2025-06-11T18:44:09.225466192Z	
+2025-06-11T18:44:09.225544311Z	68 packages are looking for funding
+2025-06-11T18:44:09.225724551Z	  run `npm fund` for details
+2025-06-11T18:44:09.269248922Z	
+2025-06-11T18:44:09.269570416Z	14 vulnerabilities (7 low, 7 moderate)
+2025-06-11T18:44:09.269604632Z	
+2025-06-11T18:44:09.269960463Z	To address issues that do not require attention, run:
+2025-06-11T18:44:09.26998163Z	  npm audit fix
+2025-06-11T18:44:09.270143698Z	
+2025-06-11T18:44:09.270186908Z	To address all issues possible (including breaking changes), run:
+2025-06-11T18:44:09.270346425Z	  npm audit fix --force
+2025-06-11T18:44:09.270454131Z	
+2025-06-11T18:44:09.270565554Z	Some issues need review, and may require choosing
+2025-06-11T18:44:09.270650744Z	a different dependency.
+2025-06-11T18:44:09.270748186Z	
+2025-06-11T18:44:09.270888989Z	Run `npm audit` for details.
+2025-06-11T18:44:09.311663998Z	Executing user command: npm run build
+2025-06-11T18:44:09.670719898Z	
+2025-06-11T18:44:09.671061991Z	> rest-express@1.0.0 build
+2025-06-11T18:44:09.67108558Z	> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+2025-06-11T18:44:09.671092212Z	
+2025-06-11T18:44:09.932409836Z	[36mvite v5.4.14 [32mbuilding for production...[36m[39m
+2025-06-11T18:44:09.98249302Z	transforming...
+2025-06-11T18:44:10.272759223Z	Browserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+2025-06-11T18:44:10.273093127Z	  npx update-browserslist-db@latest
+2025-06-11T18:44:10.273172079Z	  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+2025-06-11T18:44:13.45841905Z	[32m✓[39m 2030 modules transformed.
+2025-06-11T18:44:13.681325484Z	rendering chunks...
+2025-06-11T18:44:13.689673461Z	computing gzip size...
+2025-06-11T18:44:13.702279946Z	[2m../dist/public/[22m[32mindex.html                 [39m[1m[2m  0.63 kB[22m[1m[22m[2m │ gzip:   0.38 kB[22m
+2025-06-11T18:44:13.702542223Z	[2m../dist/public/[22m[2massets/[22m[35mindex-BsopdtbN.css  [39m[1m[2m 69.89 kB[22m[1m[22m[2m │ gzip:  11.92 kB[22m
+2025-06-11T18:44:13.702569768Z	[2m../dist/public/[22m[2massets/[22m[36mindex-JNOA5H76.js   [39m[1m[2m406.05 kB[22m[1m[22m[2m │ gzip: 124.78 kB[22m
+2025-06-11T18:44:13.702903055Z	[32m✓ built in 3.75s[39m
+2025-06-11T18:44:13.753353249Z	
+2025-06-11T18:44:13.753835712Z	  dist/index.js  42.2kb
+2025-06-11T18:44:13.754129178Z	
+2025-06-11T18:44:13.754149405Z	⚡ Done in 10ms
+2025-06-11T18:44:13.772853821Z	Finished
+2025-06-11T18:44:14.656890788Z	Checking for configuration in a Wrangler configuration file (BETA)
+2025-06-11T18:44:14.657319734Z	
+2025-06-11T18:44:15.766867361Z	No wrangler.toml file found. Continuing.
+2025-06-11T18:44:15.766899237Z	Note: No functions dir at /functions found. Skipping.
+2025-06-11T18:44:15.76690372Z	Validating asset output directory
+2025-06-11T18:44:18.375124361Z	Deploying your site to Cloudflare's global network...
+2025-06-11T18:44:20.722460563Z	Uploading... (4/4)
+2025-06-11T18:44:20.723136034Z	✨ Success! Uploaded 0 files (4 already uploaded) (0.41 sec)
+2025-06-11T18:44:20.72326253Z	
+2025-06-11T18:44:21.123687432Z	✨ Upload complete!
+2025-06-11T18:44:24.31992Z	Success: Assets published!
+2025-06-11T18:44:25.659961Z	Success: Your site was deployed!
