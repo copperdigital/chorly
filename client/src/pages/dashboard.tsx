@@ -1,574 +1,398 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuth } from "@/lib/auth-context";
-import { apiRequest } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
+import { format, addDays, subDays, startOfWeek, endOfWeek } from "date-fns";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import TaskCard from "@/components/task-card";
-import PinModal from "@/components/pin-modal";
-import CelebrationAnimation from "@/components/celebration-animation";
-import { getAvatarClass, getInitial } from "@/lib/utils";
-import { ListTodo, Settings, ArrowLeft, Calendar, CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
-import { Star, Flame } from "lucide-react";
-import { useLocation } from "wouter";
-import { cn } from "@/lib/utils";
+import { ChevronLeft, ChevronRight, Settings, Home, Calendar, Trophy } from "lucide-react";
+import FamilyMemberCard from "@/components/family-member-card";
+import TaskItem from "@/components/task-item";
+import CompletionCelebration from "@/components/completion-celebration";
+import AdminPinDialog from "@/components/admin-pin-dialog";
 
 export default function Dashboard() {
-  const [view, setView] = useState<"today" | "week">("today");
-  const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
-  const [showAdminModal, setShowAdminModal] = useState(false);
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [celebrationData, setCelebrationData] = useState<{ points: number; taskTitle: string } | null>(null);
+  const { household, member, selectMember } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [showEditPinModal, setShowEditPinModal] = useState(false);
-  const [taskToEdit, setTaskToEdit] = useState<number | null>(null);
-  const { household, currentPerson, people, selectProfile, verifyAdminPin, logout } = useAuth();
-  const [, setLocation] = useLocation();
-  const queryClient = useQueryClient();
+  const [view, setView] = useState<'day' | 'week'>('day');
+  const [selectedMember, setSelectedMember] = useState<number | null>(member?.id || null);
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [celebration, setCelebration] = useState<{
+    show: boolean;
+    taskName: string;
+    points: number;
+  }>({ show: false, taskName: "", points: 0 });
 
-  const { data: dashboardData, isLoading } = useQuery({
-    queryKey: ["/api/dashboard", household?.id, currentDate.toISOString().split('T')[0]],
-    queryFn: async () => {
-      const dateParam = currentDate.toISOString().split('T')[0];
-      const response = await fetch(`/api/dashboard?householdId=${household?.id}&date=${dateParam}`);
-      if (!response.ok) throw new Error('Failed to fetch dashboard data');
-      return response.json();
-    },
-    enabled: !!household?.id,
+  // Fetch family members
+  const { data: familyMembers = [] } = useQuery({
+    queryKey: ["/api/family-members"],
   });
 
-  const completeTaskMutation = useMutation({
-    mutationFn: async ({ instanceId, personId }: { instanceId: number; personId: number }) => {
-      const response = await apiRequest("POST", `/api/tasks/${instanceId}/complete`, { personId });
-      return response.json();
-    },
-    onSuccess: (data, variables) => {
-      // Invalidate all dashboard queries with proper keys
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard"] });
-      queryClient.refetchQueries({ queryKey: ["/api/dashboard", household?.id, currentDate.toISOString().split('T')[0]] });
+  // Fetch tasks
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["/api/tasks", format(currentDate, "yyyy-MM-dd"), selectedMember, view],
+    queryFn: () => {
+      const dateStr = format(currentDate, "yyyy-MM-dd");
+      const params = new URLSearchParams();
+      params.append('date', dateStr);
+      params.append('view', view);
+      if (selectedMember) params.append('memberId', selectedMember.toString());
       
-      if (data.pointsEarned) {
-        setCelebrationData({
-          points: data.pointsEarned,
-          taskTitle: data.taskTitle
-        });
-        setShowCelebration(true);
-        setTimeout(() => setShowCelebration(false), 3000);
-      }
+      return fetch(`/api/tasks?${params.toString()}`).then(res => res.json());
     },
   });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <ListTodo className="w-8 h-8 text-white" />
-          </div>
-          <p className="text-slate-600">Loading tasks...</p>
-        </div>
-      </div>
-    );
-  }
+  // Fetch leaderboard
+  const { data: leaderboard = [] } = useQuery({
+    queryKey: ["/api/leaderboard"],
+  });
 
-  if (!people || people.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ListTodo className="w-8 h-8 text-white" />
-          </div>
-          <p className="text-slate-600">No family members found. Please log in again.</p>
-        </div>
-      </div>
-    );
-  }
-
-  const taskInstances = dashboardData?.taskInstances || [];
-  const allTasks = taskInstances;
-
-  const handleCompleteTask = (instanceId: number) => {
-    if (currentPerson) {
-      completeTaskMutation.mutate({ instanceId, personId: currentPerson.id });
-    }
+  const handleMemberSelect = (memberId: number | null) => {
+    setSelectedMember(memberId);
+    selectMember(memberId);
   };
 
-  const handleAdminAccess = async (pin: string) => {
-    const isValid = await verifyAdminPin(pin);
-    if (isValid) {
-      setShowAdminModal(false);
-      setLocation("/admin");
-    }
-    return isValid;
-  };
-
-  const handlePersonClick = (personId: number) => {
-    setSelectedPersonId(selectedPersonId === personId ? null : personId);
-  };
-
-  const handleTaskEdit = (taskId: number) => {
-    setTaskToEdit(taskId);
-    setShowEditPinModal(true);
-  };
-
-  const handleEditPinVerify = async (pin: string) => {
-    const isValid = await verifyAdminPin(pin);
-    if (isValid && taskToEdit) {
-      setLocation(`/admin?editTask=${taskToEdit}`);
-      setShowEditPinModal(false);
-      setTaskToEdit(null);
-      return true;
-    }
-    return false;
-  };
-
-  const generateWeekView = () => {
-    const today = new Date();
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay()); // Start from Sunday
-    
-    const weekDays = [];
-    for (let i = 0; i < 7; i++) {
-      const currentDay = new Date(weekStart);
-      currentDay.setDate(weekStart.getDate() + i);
-      
-      // Filter tasks for this day - exclude completed tasks
-      const dayTasks = taskInstances.filter((task: any) => {
-        if (task.isCompleted) return false;
-        const taskDate = new Date(task.dueDate);
-        return (
-          taskDate.toDateString() === currentDay.toDateString() &&
-          (!selectedPersonId || task.assignedTo === selectedPersonId)
-        );
-      });
-      
-      weekDays.push({
-        dayName: currentDay.toLocaleDateString('en-US', { weekday: 'long' }),
-        date: currentDay.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        isToday: currentDay.toDateString() === today.toDateString(),
-        tasks: dayTasks,
-        taskCount: dayTasks.length
-      });
-    }
-    
-    return weekDays;
-  };
-
-  const navigateDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentDate);
-    if (view === 'today') {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
+  const handleDateChange = (direction: 'prev' | 'next') => {
+    if (view === 'day') {
+      setCurrentDate(direction === 'next' ? addDays(currentDate, 1) : subDays(currentDate, 1));
     } else {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+      setCurrentDate(direction === 'next' ? addDays(currentDate, 7) : subDays(currentDate, 7));
     }
-    setCurrentDate(newDate);
   };
 
-  // Get tasks for display - server already filters by date, just filter by person and completion
-  const tasksToShow = (selectedPersonId 
-    ? allTasks.filter((ti: any) => ti.assignedTo === selectedPersonId)
-    : allTasks
-  ).filter((ti: any) => {
-    // Only show incomplete tasks (server already filtered by date)
-    return !ti.isCompleted;
-  });
+  const onTaskComplete = (taskName: string, points: number) => {
+    setCelebration({ show: true, taskName, points });
+  };
 
-  // Calculate stats for each person - server already filtered by date
-  const peopleWithStats = people.map((person: any) => {
-    const personTasks = allTasks.filter((ti: any) => {
-      return ti.assignedTo === person.id;
-    });
-    const completedTasks = personTasks.filter((ti: any) => ti.isCompleted);
-    const incompleteTasks = personTasks.filter((ti: any) => !ti.isCompleted);
-    const progress = personTasks.length > 0 ? Math.round((completedTasks.length / personTasks.length) * 100) : 0;
+  const formatDateDisplay = () => {
+    if (view === 'day') {
+      const isToday = format(currentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+      return isToday ? `Today, ${format(currentDate, 'MMMM d')}` : format(currentDate, 'MMMM d, yyyy');
+    } else {
+      const start = startOfWeek(currentDate);
+      const end = endOfWeek(currentDate);
+      return `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`;
+    }
+  };
+
+  const overdTasks = tasks.filter((task: any) => task.isOverdue);
+  const todayTasks = tasks.filter((task: any) => !task.isOverdue);
+  const completedCount = todayTasks.filter((task: any) => task.isCompleted).length;
+
+  // Group tasks by day for week view
+  const groupTasksByDay = () => {
+    if (view === 'day') return null;
     
-    return {
-      ...person,
-      tasksToday: incompleteTasks.length, // Only show incomplete tasks in the count
-      completedToday: completedTasks.length,
-      progressToday: progress
-    };
-  });
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday start
+    const groupedTasks: { [key: string]: any[] } = {};
+    
+    for (let i = 0; i < 7; i++) {
+      const day = addDays(weekStart, i);
+      const dayKey = format(day, 'yyyy-MM-dd');
+      groupedTasks[dayKey] = tasks.filter((task: any) => 
+        format(new Date(task.startDate), 'yyyy-MM-dd') === dayKey
+      );
+    }
+    
+    return groupedTasks;
+  };
 
-  const selectedPerson = selectedPersonId ? people.find(p => p.id === selectedPersonId) : null;
+  const weeklyTaskGroups = groupTasksByDay();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50">
+      <header className="bg-white/80 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-primary to-purple-600 rounded-xl flex items-center justify-center">
-                <ListTodo className="text-white text-lg" />
+              <div className="w-10 h-10 gradient-primary rounded-full flex items-center justify-center">
+                <Home className="text-white text-lg" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-800">Chory</h1>
-                <p className="text-xs text-slate-500">{household?.name} Family</p>
+                <h1 className="text-xl font-bold text-gray-900">{household?.name}</h1>
+                <p className="text-sm text-gray-500">Chore Champions!</p>
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              {selectedPerson && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedPersonId(null)}
-                  className="text-slate-600 hover:text-slate-800"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to All
-                </Button>
-              )}
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowAdminModal(true)}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <Settings className="w-4 h-4" />
-              </Button>
-            </div>
+            <Button 
+              onClick={() => setShowAdminDialog(true)}
+              className="btn-primary flex items-center space-x-2"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Admin</span>
+            </Button>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Person Boxes - 4 across, 25% each */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          {peopleWithStats.map((person) => (
-            <Card 
-              key={person.id}
-              className={cn(
-                "cursor-pointer transition-all duration-200 hover:shadow-md",
-                selectedPersonId === person.id 
-                  ? "border-2 border-primary bg-primary/5" 
-                  : "border border-slate-200 hover:border-primary/50",
-                selectedPersonId && selectedPersonId !== person.id ? "opacity-75" : ""
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Family Members Section */}
+        <section className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <svg className="w-6 h-6 mr-3 text-primary" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"/>
+            </svg>
+            Family Members
+          </h2>
+          <div className="flex space-x-4 overflow-x-auto pb-4 scrollbar-hide">
+            {familyMembers.map((familyMember: any) => (
+              <FamilyMemberCard
+                key={familyMember.id}
+                member={familyMember}
+                isSelected={selectedMember === familyMember.id}
+                isCompact={selectedMember !== null}
+                onSelect={() => {
+                  if (selectedMember === familyMember.id) {
+                    handleMemberSelect(null); // Deselect if clicking the same member
+                  } else {
+                    handleMemberSelect(familyMember.id);
+                  }
+                }}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* View Navigation */}
+        <section className="mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+            <div className="bg-white rounded-lg p-1 shadow-md border border-gray-200">
+              <div className="flex">
+                <button
+                  onClick={() => setView('day')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    view === 'day' 
+                      ? 'bg-primary text-white shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Day View
+                </button>
+                <button
+                  onClick={() => setView('week')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                    view === 'week' 
+                      ? 'bg-primary text-white shadow-sm' 
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Week View
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => handleDateChange('prev')}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-md transition-all duration-200 text-gray-600 hover:text-gray-900"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-gray-900">{formatDateDisplay()}</h3>
+                <p className="text-sm text-gray-500">{format(currentDate, 'EEEE')}</p>
+              </div>
+              <button
+                onClick={() => handleDateChange('next')}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-md transition-all duration-200 text-gray-600 hover:text-gray-900"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Task Lists */}
+        <section>
+          {/* Overdue Tasks */}
+          {overdTasks.length > 0 && (
+            <div className="mb-6">
+              <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 rounded-lg p-4 mb-4">
+                <div className="flex items-center mb-3">
+                  <svg className="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+                  </svg>
+                  <h3 className="text-lg font-semibold text-red-700">Overdue Tasks</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  {overdTasks.map((task: any) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      showDoneButton={selectedMember !== null}
+                      onComplete={onTaskComplete}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Day View - Today's Tasks */}
+          {view === 'day' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                  <Calendar className="w-5 h-5 mr-3 text-primary" />
+                  Today's Tasks
+                </h3>
+                <div className="bg-gradient-to-r from-primary/10 to-secondary/10 px-3 py-1 rounded-full">
+                  <span className="text-sm font-medium text-primary">
+                    {completedCount}/{todayTasks.length} completed
+                  </span>
+                </div>
+              </div>
+
+              {todayTasks.length > 0 ? (
+                <div className="space-y-4">
+                  {todayTasks.map((task: any) => (
+                    <TaskItem
+                      key={task.id}
+                      task={task}
+                      showDoneButton={selectedMember !== null}
+                      onComplete={onTaskComplete}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl p-8 text-center shadow-lg border border-gray-100">
+                  <div className="text-6xl mb-4">🎉</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No tasks for today!
+                  </h3>
+                  <p className="text-gray-600">
+                    {selectedMember 
+                      ? "You're all caught up! Great work!" 
+                      : "Select a family member to see their tasks, or check back later."}
+                  </p>
+                </div>
               )}
-              onClick={() => handlePersonClick(person.id)}
-            >
-              <CardContent className={cn(
-                "text-center transition-all duration-200",
-                selectedPersonId ? "p-3" : "p-4"
-              )}>
-                {selectedPersonId ? (
-                  // Compact view for all people when someone is selected
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center",
-                      getAvatarClass(person.avatar)
-                    )}>
-                      <span className="text-white text-sm font-bold">
-                        {getInitial(person.nickname)}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium text-slate-700">{person.nickname}</span>
-                  </div>
-                ) : (
-                  // Full view
-                  <>
-                    <div className={cn(
-                      "w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center shadow-lg",
-                      getAvatarClass(person.avatar)
-                    )}>
-                      <span className="text-white text-xl font-bold">
-                        {getInitial(person.nickname)}
-                      </span>
-                    </div>
-                    
-                    <h3 className="font-semibold text-slate-800 mb-3">{person.nickname}</h3>
-                    
-                    {/* Progress Bar */}
-                    <div className="mb-3">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs text-slate-600">Today's Tasks</span>
-                        <span className="text-xs font-medium text-slate-800">
-                          {person.completedToday}/{person.tasksToday}
+            </div>
+          )}
+
+          {/* Week View - Tasks Grouped by Day */}
+          {view === 'week' && weeklyTaskGroups && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                  <Calendar className="w-5 h-5 mr-3 text-primary" />
+                  This Week's Tasks
+                </h3>
+              </div>
+
+              <div className="grid gap-4">
+                {Object.entries(weeklyTaskGroups).map(([dateKey, dayTasks]) => {
+                  const dayDate = new Date(dateKey);
+                  const isToday = format(dayDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd');
+                  const dayTasksFiltered = dayTasks.filter((task: any) => !task.isOverdue);
+                  
+                  return (
+                    <div key={dateKey} className={`bg-white rounded-lg p-4 shadow-sm border ${isToday ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200'}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className={`font-semibold ${isToday ? 'text-primary' : 'text-gray-900'}`}>
+                          {format(dayDate, 'EEEE, MMM d')}
+                          {isToday && <span className="ml-2 text-xs bg-primary text-white px-2 py-1 rounded-full">Today</span>}
+                        </h4>
+                        <span className="text-sm text-gray-500">
+                          {dayTasksFiltered.length} task{dayTasksFiltered.length !== 1 ? 's' : ''}
                         </span>
                       </div>
-                      <div className="w-full bg-slate-200 rounded-full h-2">
-                        <div 
-                          className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${person.progressToday}%` }}
-                        ></div>
-                      </div>
-                    </div>
-
-                    {/* Stats with Icons */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex items-center justify-center space-x-1 bg-amber-50 rounded-lg p-2">
-                        <Star className="w-3 h-3 text-amber-600" />
-                        <span className="text-xs font-medium text-amber-700">{person.totalPoints || 0}</span>
-                      </div>
-                      <div className="flex items-center justify-center space-x-1 bg-orange-50 rounded-lg p-2">
-                        <Flame className="w-3 h-3 text-orange-600" />
-                        <span className="text-xs font-medium text-orange-700">{person.currentStreak || 0}</span>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Header for tasks section */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-800">
-              {selectedPerson ? `${selectedPerson.nickname}'s Tasks` : 'All Family Tasks'}
-            </h2>
-            <p className="text-slate-600">
-              {selectedPerson ? `Personal task list` : 'Household tasks for everyone'}
-            </p>
-          </div>
-
-          {/* Navigation for all views */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateDate('prev')}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <span className="text-sm font-medium text-slate-600 px-3">
-              {view === 'today' 
-                ? currentDate.toLocaleDateString()
-                : `Week of ${currentDate.toLocaleDateString()}`
-              }
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigateDate('next')}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* View Toggle */}
-        <Tabs value={view} onValueChange={(v) => setView(v as "today" | "week")}>
-          <div className="mb-6">
-            <TabsList className="grid w-full max-w-md grid-cols-2 bg-white rounded-xl p-1 shadow-sm">
-              <TabsTrigger value="today" className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4" />
-                <span>Day</span>
-              </TabsTrigger>
-              <TabsTrigger value="week" className="flex items-center space-x-2">
-                <CalendarDays className="w-4 h-4" />
-                <span>Week</span>
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="today" className="space-y-4 mt-0">
-            {tasksToShow.length === 0 ? (
-              <Card>
-                <CardContent className="p-8">
-                  <div className="text-center py-8 text-slate-500">
-                    <ListTodo className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <h3 className="text-lg font-semibold mb-2">No tasks for today!</h3>
-                    <p>{selectedPerson ? `${selectedPerson.nickname} has no tasks` : 'All family tasks are completed'}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              tasksToShow.map((taskInstance: any) => {
-                const taskPerson = people.find(p => p.id === taskInstance.assignedTo);
-                const isOverdue = new Date(taskInstance.dueDate) < new Date() && !taskInstance.isCompleted;
-                
-                return (
-                  <Card key={taskInstance.id} className={cn(
-                    "overflow-hidden border",
-                    isOverdue ? "border-red-200 bg-red-50" : "border-slate-200"
-                  )}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center space-x-4">
-                        {/* Show person info only in "all tasks" view */}
-                        {!selectedPerson && (
-                          <div className="flex items-center space-x-3">
-                            <div className="flex -space-x-2">
-                              {/* Primary assignee */}
-                              <div className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center border-2 border-white",
-                                getAvatarClass(taskPerson?.avatar || "")
-                              )}>
-                                <span className="text-white font-semibold text-xs">
-                                  {getInitial(taskPerson?.nickname || "")}
-                                </span>
-                              </div>
-                              {/* Secondary assignees */}
-                              {taskInstance.task?.secondaryAssignees?.map((assigneeId: number, index: number) => {
-                                const secondaryPerson = people.find(p => p.id === assigneeId);
-                                return secondaryPerson ? (
-                                  <div key={assigneeId} className={cn(
-                                    "w-8 h-8 rounded-full flex items-center justify-center border-2 border-white",
-                                    getAvatarClass(secondaryPerson.avatar)
-                                  )}>
-                                    <span className="text-white font-semibold text-xs">
-                                      {getInitial(secondaryPerson.nickname)}
-                                    </span>
-                                  </div>
-                                ) : null;
-                              })}
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-slate-700">
-                                {taskPerson?.nickname}
-                                {taskInstance.task?.secondaryAssignees?.length > 0 && 
-                                  ` +${taskInstance.task.secondaryAssignees.length}`
-                                }
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Task Details */}
-                        <div className="flex-1">
-                          <TaskCard
-                            taskInstance={taskInstance}
-                            onComplete={() => handleCompleteTask(taskInstance.id)}
-                            onEdit={handleTaskEdit}
-                            isLoading={completeTaskMutation.isPending}
-                            canComplete={!taskInstance.isCompleted && !!selectedPerson}
-                          />
+                      
+                      {dayTasksFiltered.length > 0 ? (
+                        <div className="space-y-3">
+                          {dayTasksFiltered.map((task: any, index: number) => (
+                            <TaskItem
+                              key={`${task.id}-${dateKey}-${index}`}
+                              task={task}
+                              showDoneButton={selectedMember !== null}
+                              onComplete={onTaskComplete}
+                            />
+                          ))}
                         </div>
-                        
-                        {/* Overdue Badge */}
-                        {isOverdue && (
-                          <Badge variant="destructive" className="text-xs">
-                            Overdue
-                          </Badge>
-                        )}
+                      ) : (
+                        <p className="text-gray-400 text-sm italic">No tasks scheduled</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* Leaderboard */}
+        {leaderboard.length > 0 && (
+          <section className="mt-8">
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                  <Trophy className="w-5 h-5 mr-3 text-yellow-500" />
+                  Weekly Leaderboard
+                </h3>
+              </div>
+
+              <div className="space-y-4">
+                {leaderboard.slice(0, 3).map((entry: any, index: number) => (
+                  <div
+                    key={entry.member.id}
+                    className={`flex items-center justify-between p-4 rounded-xl border ${
+                      index === 0
+                        ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200'
+                        : 'bg-gray-50 border-gray-200'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                          index === 0
+                            ? 'bg-gradient-to-r from-yellow-400 to-orange-500'
+                            : index === 1
+                            ? 'bg-gray-400'
+                            : 'bg-orange-400'
+                        }`}
+                      >
+                        {index + 1}
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })
-            )}
-          </TabsContent>
-
-          <TabsContent value="week" className="space-y-6 mt-0">
-            {generateWeekView().map((day: any, index: number) => (
-              <Card key={index}>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-3">
-                      <Calendar className="w-5 h-5 text-primary" />
-                      <span className="text-lg font-semibold">{day.dayName}</span>
-                      <span className="text-sm text-slate-500">{day.date}</span>
+                      <div
+                        className="w-12 h-12 rounded-full flex items-center justify-center text-white text-lg font-bold"
+                        style={{ background: entry.member.color }}
+                      >
+                        {entry.member.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{entry.member.name}</h4>
+                        <p className="text-sm text-gray-600">
+                          {index === 0 ? 'Chore Champion! 🏆' : 'Great work! 💪'}
+                        </p>
+                      </div>
                     </div>
-                    <Badge variant={day.isToday ? "default" : "secondary"}>
-                      {day.taskCount} tasks
-                    </Badge>
+                    <div className="text-right">
+                      <div className={`text-xl font-bold ${
+                        index === 0 ? 'text-yellow-600' : 'text-gray-700'
+                      }`}>
+                        {entry.weeklyPoints} pts
+                      </div>
+                      <div className="text-sm text-gray-500">+{entry.weeklyIncrease} this week</div>
+                    </div>
                   </div>
-                  
-                  {day.tasks.length === 0 ? (
-                    <p className="text-slate-500 text-center py-4">No tasks for this day</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {day.tasks.map((taskInstance: any) => {
-                        const taskPerson = people.find(p => p.id === taskInstance.assignedTo);
-                        const isOverdue = new Date(taskInstance.dueDate) < new Date() && !taskInstance.isCompleted;
-                        
-                        return (
-                          <div key={taskInstance.id} className={cn(
-                            "flex items-center space-x-4 p-3 rounded-lg border",
-                            isOverdue ? "bg-red-50 border-red-200" : "bg-slate-50 border-slate-200"
-                          )}>
-                            {!selectedPerson && (
-                              <div className="flex items-center space-x-2">
-                                <div className="flex -space-x-1">
-                                  {/* Primary assignee */}
-                                  <div className={cn(
-                                    "w-8 h-8 rounded-full flex items-center justify-center border-2 border-white",
-                                    getAvatarClass(taskPerson?.avatar || "")
-                                  )}>
-                                    <span className="text-white text-sm font-semibold">
-                                      {getInitial(taskPerson?.nickname || "")}
-                                    </span>
-                                  </div>
-                                  {/* Secondary assignees */}
-                                  {taskInstance.task?.secondaryAssignees?.map((assigneeId: number) => {
-                                    const secondaryPerson = people.find(p => p.id === assigneeId);
-                                    return secondaryPerson ? (
-                                      <div key={assigneeId} className={cn(
-                                        "w-6 h-6 rounded-full flex items-center justify-center border-2 border-white",
-                                        getAvatarClass(secondaryPerson.avatar)
-                                      )}>
-                                        <span className="text-white font-bold text-xs">
-                                          {getInitial(secondaryPerson.nickname)}
-                                        </span>
-                                      </div>
-                                    ) : null;
-                                  })}
-                                </div>
-                                <span className="text-sm font-medium text-slate-700">
-                                  {taskPerson?.nickname}
-                                  {taskInstance.task?.secondaryAssignees?.length > 0 && 
-                                    ` +${taskInstance.task.secondaryAssignees.length}`
-                                  }
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex-1">
-                              <TaskCard
-                                taskInstance={taskInstance}
-                                onComplete={() => handleCompleteTask(taskInstance.id)}
-                                onEdit={handleTaskEdit}
-                                isLoading={completeTaskMutation.isPending}
-                                canComplete={!taskInstance.isCompleted}
-                              />
-                            </div>
-                            {isOverdue && (
-                              <Badge variant="destructive" className="text-xs">
-                                Overdue
-                              </Badge>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </TabsContent>
-        </Tabs>
-      </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+      </main>
 
-      {/* Admin PIN Modal */}
-      <PinModal
-        isOpen={showAdminModal}
-        onClose={() => setShowAdminModal(false)}
-        onVerify={handleAdminAccess}
-        title="Admin Access"
-        description="Enter your 4-digit PIN to continue"
+      {/* Modals */}
+      <CompletionCelebration
+        show={celebration.show}
+        taskName={celebration.taskName}
+        points={celebration.points}
+        onClose={() => setCelebration({ show: false, taskName: "", points: 0 })}
       />
 
-      {/* Edit Task PIN Modal */}
-      <PinModal
-        isOpen={showEditPinModal}
-        onClose={() => {
-          setShowEditPinModal(false);
-          setTaskToEdit(null);
-        }}
-        onVerify={handleEditPinVerify}
-        title="Edit Task"
-        description="Enter your admin PIN to edit this task"
-      />
-
-      {/* Celebration Animation */}
-      <CelebrationAnimation
-        isVisible={showCelebration}
-        points={celebrationData?.points || 0}
-        taskTitle={celebrationData?.taskTitle || ""}
+      <AdminPinDialog
+        open={showAdminDialog}
+        onClose={() => setShowAdminDialog(false)}
       />
     </div>
   );

@@ -1,120 +1,186 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const households = pgTable("households", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  password: text("password").notNull(),
+  email: text("email").unique().notNull(),
+  passwordHash: text("password_hash").notNull(),
+  adminPin: text("admin_pin").notNull().default("1234"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const people = pgTable("people", {
+export const familyMembers = pgTable("family_members", {
   id: serial("id").primaryKey(),
-  householdId: integer("household_id").notNull(),
-  nickname: text("nickname").notNull(),
-  pin: text("pin").notNull(), // 4-digit PIN
-  isAdmin: boolean("is_admin").notNull().default(false),
-  currentStreak: integer("current_streak").notNull().default(0),
-  totalPoints: integer("total_points").notNull().default(0),
-  avatar: text("avatar").notNull().default("default"), // avatar identifier
+  householdId: integer("household_id").references(() => households.id).notNull(),
+  name: text("name").notNull(),
+  role: text("role").notNull(), // 'parent' | 'child'
+  color: text("color").notNull(), // hex color code
+  age: integer("age"),
+  currentStreak: integer("current_streak").default(0).notNull(),
+  totalPoints: integer("total_points").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
-  householdId: integer("household_id").notNull(),
-  title: text("title").notNull(),
+  householdId: integer("household_id").references(() => households.id).notNull(),
+  name: text("name").notNull(),
   description: text("description"),
-  estimatedMinutes: integer("estimated_minutes").notNull().default(5),
-  points: integer("points").notNull().default(10),
-  isRecurring: boolean("is_recurring").notNull().default(false),
-  recurrenceType: text("recurrence_type"), // 'daily', 'weekly', 'monthly', 'yearly', 'custom'
-  recurrenceInterval: integer("recurrence_interval").default(1), // for custom intervals
-  customDays: integer("custom_days"), // for "every X days" when recurrenceType is "custom"
-  dueDate: timestamp("due_date"), // default due date for this task
-  startDate: timestamp("start_date"),
+  points: integer("points").notNull(),
+  estimatedMinutes: integer("estimated_minutes").notNull(),
+  scheduleType: text("schedule_type").notNull(), // 'daily' | 'weekly' | 'monthly' | 'custom'
+  scheduleValue: integer("schedule_value"), // for custom: every X days
+
+  startDate: timestamp("start_date").defaultNow().notNull(), // When task starts (for recurring tasks)
   endDate: timestamp("end_date"),
-  assignedTo: integer("assigned_to").notNull(), // primary person
-  secondaryAssignees: text("secondary_assignees").array().default([]), // array of person IDs as strings
-  isActive: boolean("is_active").notNull().default(true),
-  dueDateType: text("due_date_type").notNull().default("on_date"), // "on_date" or "by_date"
-  priority: integer("priority").notNull().default(1), // 1=low, 2=medium, 3=high
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const taskInstances = pgTable("task_instances", {
+export const taskAssignments = pgTable("task_assignments", {
   id: serial("id").primaryKey(),
-  taskId: integer("task_id").notNull(),
-  assignedTo: integer("assigned_to").notNull(),
-  isSecondary: boolean("is_secondary").notNull().default(false),
+  taskId: integer("task_id").references(() => tasks.id).notNull(),
+  memberId: integer("member_id").references(() => familyMembers.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const taskCompletions = pgTable("task_completions", {
+  id: serial("id").primaryKey(),
+  taskId: integer("task_id").references(() => tasks.id).notNull(),
+  memberId: integer("member_id").references(() => familyMembers.id).notNull(),
+  completedAt: timestamp("completed_at").defaultNow().notNull(),
+  pointsEarned: integer("points_earned").notNull(),
   dueDate: timestamp("due_date").notNull(),
-  completedAt: timestamp("completed_at"),
-  isCompleted: boolean("is_completed").notNull().default(false),
-  pointsEarned: integer("points_earned").default(0),
-  isOverdue: boolean("is_overdue").notNull().default(false),
-  currentPriority: integer("current_priority").notNull().default(1), // calculated priority based on due date
 });
 
-export const blackMarks = pgTable("black_marks", {
+export const achievements = pgTable("achievements", {
   id: serial("id").primaryKey(),
-  personId: integer("person_id").notNull(),
-  taskInstanceId: integer("task_instance_id").notNull(),
-  missedDate: timestamp("missed_date").notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  icon: text("icon").notNull(),
+  condition: jsonb("condition").notNull(), // JSON describing achievement condition
+  points: integer("points").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+});
+
+export const memberAchievements = pgTable("member_achievements", {
+  id: serial("id").primaryKey(),
+  memberId: integer("member_id").references(() => familyMembers.id).notNull(),
+  achievementId: integer("achievement_id").references(() => achievements.id).notNull(),
+  earnedAt: timestamp("earned_at").defaultNow().notNull(),
 });
 
 export const rewards = pgTable("rewards", {
   id: serial("id").primaryKey(),
-  householdId: integer("household_id").notNull(),
-  title: text("title").notNull(),
+  householdId: integer("household_id").references(() => households.id).notNull(),
+  name: text("name").notNull(),
   description: text("description"),
   pointsCost: integer("points_cost").notNull(),
-  isAvailable: boolean("is_available").notNull().default(true),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const rewardClaims = pgTable("reward_claims", {
   id: serial("id").primaryKey(),
-  rewardId: integer("reward_id").notNull(),
-  personId: integer("person_id").notNull(),
-  claimedAt: timestamp("claimed_at").notNull(),
+  rewardId: integer("reward_id").references(() => rewards.id).notNull(),
+  memberId: integer("member_id").references(() => familyMembers.id).notNull(),
   pointsSpent: integer("points_spent").notNull(),
+  claimedAt: timestamp("claimed_at").defaultNow().notNull(),
+  status: text("status").default("pending").notNull(), // 'pending' | 'approved' | 'completed'
 });
 
 // Insert schemas
-export const insertHouseholdSchema = createInsertSchema(households).omit({ id: true });
-export const insertPersonSchema = createInsertSchema(people).omit({ id: true });
-export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true });
-export const insertTaskInstanceSchema = createInsertSchema(taskInstances).omit({ id: true });
-export const insertBlackMarkSchema = createInsertSchema(blackMarks).omit({ id: true });
-export const insertRewardSchema = createInsertSchema(rewards).omit({ id: true });
-export const insertRewardClaimSchema = createInsertSchema(rewardClaims).omit({ id: true });
+export const insertHouseholdSchema = createInsertSchema(households).omit({
+  id: true,
+  createdAt: true,
+}).extend({
+  password: z.string().min(6, "Password must be at least 6 characters"),
+}).omit({
+  passwordHash: true,
+});
+
+export const insertFamilyMemberSchema = createInsertSchema(familyMembers).omit({
+  id: true,
+  isActive: true,
+  createdAt: true,
+});
+
+export const insertTaskSchema = createInsertSchema(tasks).omit({
+  id: true,
+  isActive: true,
+  createdAt: true,
+});
+
+export const insertTaskAssignmentSchema = createInsertSchema(taskAssignments).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTaskCompletionSchema = createInsertSchema(taskCompletions).omit({
+  id: true,
+  completedAt: true,
+});
+
+export const insertRewardSchema = createInsertSchema(rewards).omit({
+  id: true,
+  isActive: true,
+  createdAt: true,
+});
+
+export const insertRewardClaimSchema = createInsertSchema(rewardClaims).omit({
+  id: true,
+  claimedAt: true,
+  status: true,
+});
 
 // Types
 export type Household = typeof households.$inferSelect;
-export type Person = typeof people.$inferSelect;
-export type Task = typeof tasks.$inferSelect;
-export type TaskInstance = typeof taskInstances.$inferSelect;
-export type BlackMark = typeof blackMarks.$inferSelect;
-export type Reward = typeof rewards.$inferSelect;
-export type RewardClaim = typeof rewardClaims.$inferSelect;
-
 export type InsertHousehold = z.infer<typeof insertHouseholdSchema>;
-export type InsertPerson = z.infer<typeof insertPersonSchema>;
+
+export type FamilyMember = typeof familyMembers.$inferSelect;
+export type InsertFamilyMember = z.infer<typeof insertFamilyMemberSchema>;
+
+export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
-export type InsertTaskInstance = z.infer<typeof insertTaskInstanceSchema>;
-export type InsertBlackMark = z.infer<typeof insertBlackMarkSchema>;
+
+export type TaskAssignment = typeof taskAssignments.$inferSelect;
+export type InsertTaskAssignment = z.infer<typeof insertTaskAssignmentSchema>;
+
+export type TaskCompletion = typeof taskCompletions.$inferSelect;
+export type InsertTaskCompletion = z.infer<typeof insertTaskCompletionSchema>;
+
+export type Achievement = typeof achievements.$inferSelect;
+export type MemberAchievement = typeof memberAchievements.$inferSelect;
+
+export type Reward = typeof rewards.$inferSelect;
 export type InsertReward = z.infer<typeof insertRewardSchema>;
+
+export type RewardClaim = typeof rewardClaims.$inferSelect;
 export type InsertRewardClaim = z.infer<typeof insertRewardClaimSchema>;
 
-// Auth schemas
-export const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
+// Extended types for UI
+export type FamilyMemberWithStats = FamilyMember & {
+  tasksCompletedToday: number;
+  tasksAssignedToday: number;
+  pointsEarnedToday: number;
+  progressPercentage: number;
+};
 
-export const profileSelectSchema = z.object({
-  personId: z.number(),
-  pin: z.string().length(4),
-});
+export type TaskWithAssignees = Task & {
+  assignees: FamilyMember[];
+  isCompleted?: boolean;
+  completedBy?: FamilyMember;
+  completedAt?: Date;
+  isOverdue?: boolean;
+  daysOverdue?: number;
+};
 
-export const adminPinSchema = z.object({
-  pin: z.string().length(4),
-});
+export type LeaderboardEntry = {
+  member: FamilyMember;
+  weeklyPoints: number;
+  weeklyIncrease: number;
+  rank: number;
+};

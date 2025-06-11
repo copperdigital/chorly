@@ -3,53 +3,61 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(210, 40%, 98%);
-  --foreground: hsl(222.2, 84%, 4.9%);
-  --muted: hsl(210, 40%, 96%);
-  --muted-foreground: hsl(215.4, 16.3%, 46.9%);
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
   --popover: hsl(0, 0%, 100%);
-  --popover-foreground: hsl(222.2, 84%, 4.9%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
   --card: hsl(0, 0%, 100%);
-  --card-foreground: hsl(222.2, 84%, 4.9%);
-  --border: hsl(214.3, 31.8%, 91.4%);
-  --input: hsl(214.3, 31.8%, 91.4%);
-  --primary: hsl(246, 83%, 66%);
-  --primary-foreground: hsl(210, 40%, 98%);
-  --secondary: hsl(159, 85%, 46%);
-  --secondary-foreground: hsl(210, 40%, 98%);
-  --accent: hsl(37, 92%, 50%);
-  --accent-foreground: hsl(210, 40%, 98%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(245, 83%, 67%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(262, 83%, 70%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
   --destructive: hsl(0, 84.2%, 60.2%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(222.2, 84%, 4.9%);
-  --radius: 0.75rem;
-  --chart-1: hsl(246, 83%, 66%);
-  --chart-2: hsl(159, 85%, 46%);
-  --chart-3: hsl(37, 92%, 50%);
-  --chart-4: hsl(326, 79%, 64%);
-  --chart-5: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --success: hsl(149, 80%, 40%);
+  --success-foreground: hsl(0, 0%, 100%);
+  --warning: hsl(45, 93%, 47%);
+  --warning-foreground: hsl(0, 0%, 100%);
+  --info: hsl(197, 89%, 43%);
+  --info-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
 }
 
 .dark {
-  --background: hsl(222.2, 84%, 4.9%);
-  --foreground: hsl(210, 40%, 98%);
-  --muted: hsl(217.2, 32.6%, 17.5%);
-  --muted-foreground: hsl(215, 20.2%, 65.1%);
-  --popover: hsl(222.2, 84%, 4.9%);
-  --popover-foreground: hsl(210, 40%, 98%);
-  --card: hsl(222.2, 84%, 4.9%);
-  --card-foreground: hsl(210, 40%, 98%);
-  --border: hsl(217.2, 32.6%, 17.5%);
-  --input: hsl(217.2, 32.6%, 17.5%);
-  --primary: hsl(246, 83%, 66%);
-  --primary-foreground: hsl(222.2, 84%, 4.9%);
-  --secondary: hsl(159, 85%, 46%);
-  --secondary-foreground: hsl(222.2, 84%, 4.9%);
-  --accent: hsl(37, 92%, 50%);
-  --accent-foreground: hsl(222.2, 84%, 4.9%);
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(245, 83%, 67%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(262, 83%, 70%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
   --destructive: hsl(0, 62.8%, 30.6%);
-  --destructive-foreground: hsl(210, 40%, 98%);
-  --ring: hsl(212.7, 26.8%, 83.9%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --success: hsl(149, 80%, 40%);
+  --success-foreground: hsl(0, 0%, 100%);
+  --warning: hsl(45, 93%, 47%);
+  --warning-foreground: hsl(0, 0%, 100%);
+  --info: hsl(197, 89%, 43%);
+  --info-foreground: hsl(0, 0%, 100%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -58,65 +66,96 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased bg-gradient-to-br from-blue-50 via-white to-purple-50 min-h-screen;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 
-@layer utilities {
-  .avatar-primary {
-    @apply bg-gradient-to-r from-primary to-purple-600;
+@layer components {
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-secondary;
   }
   
-  .avatar-secondary {
-    @apply bg-gradient-to-r from-secondary to-green-600;
+  .gradient-success {
+    @apply bg-gradient-to-r from-green-400 to-emerald-500;
   }
   
-  .avatar-accent {
-    @apply bg-gradient-to-r from-accent to-orange-600;
+  .gradient-warning {
+    @apply bg-gradient-to-r from-yellow-400 to-orange-500;
   }
   
-  .avatar-pink {
-    @apply bg-gradient-to-r from-pink-500 to-rose-600;
+  .gradient-info {
+    @apply bg-gradient-to-r from-cyan-400 to-blue-500;
   }
   
-  .avatar-default {
-    @apply bg-gradient-to-r from-slate-400 to-slate-600;
+  .gradient-danger {
+    @apply bg-gradient-to-r from-red-400 to-pink-500;
   }
+  
+  .card-hover {
+    @apply hover:shadow-xl transition-all duration-300 cursor-pointer;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-primary to-secondary text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-200;
+  }
+  
+  .btn-success {
+    @apply bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-medium hover:shadow-lg transition-all duration-200;
+  }
+}
 
-  .confetti {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    z-index: 1000;
+@keyframes bounce-gentle {
+  0%, 20%, 53%, 80%, 100% {
+    transform: translate3d(0,0,0);
   }
+  40%, 43% {
+    transform: translate3d(0, -8px, 0);
+  }
+  70% {
+    transform: translate3d(0, -4px, 0);
+  }
+  90% {
+    transform: translate3d(0, -2px, 0);
+  }
+}
 
-  .confetti-piece {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: hsl(var(--primary));
-    animation: confetti-fall 3s ease-out forwards;
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
+  to {
+    opacity: 1;
+  }
+}
 
-  @keyframes confetti-fall {
-    0% {
-      transform: translateY(-100vh) rotate(0deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(100vh) rotate(720deg);
-      opacity: 0;
-    }
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
   }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
 
-  .animate-bounce-slow {
-    animation: bounce 2s infinite;
-  }
+.animate-bounce-gentle {
+  animation: bounce-gentle 1s infinite;
+}
 
-  .animate-pulse-slow {
-    animation: pulse 3s infinite;
-  }
+.animate-fade-in {
+  animation: fade-in 0.5s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
 }

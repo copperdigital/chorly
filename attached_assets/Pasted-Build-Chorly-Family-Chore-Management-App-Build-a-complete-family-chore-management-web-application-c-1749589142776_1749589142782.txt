@@ -1,0 +1,58 @@
+Build Chorly: Family Chore Management App
+Build a complete family chore management web application called "Chorly" with gamification features, designed for zero cold-start deployment on Cloudflare Pages.
+ Core Requirements
+Performance: Must deploy to Cloudflare Pages with zero cold-start delays. Use Cloudflare Functions for serverless API endpoints.
+ Authentication: Simple family-based authentication with profile selection (no complex OAuth needed initially).
+ Database: Use Neon PostgreSQL with Drizzle ORM for data persistence.
+Key Features
+1. Family Management
+* Family households with editable family names
+* Family member profiles (parents, children) can be created in the admin console
+* Role-based permissions (admin vs regular users)
+* Admin PIN protection (default: 1234)
+* Choose colour for each person
+2. Task Management
+* Create, edit, and delete chores/tasks
+* Name, description, time to complete.
+* Multiple assignees per task (crucial requirement)
+* Task scheduling (daily, weekly, monthly, every x days)
+* Due dates and end date, if recurring
+3. Gamification System
+* Points system for completed tasks
+* Streak tracking for consecutive completions
+* Achievement badges and milestones
+* Family leaderboard
+* Reward system with claimable rewards
+4. User Experience
+* Modern, family-friendly design with gradients and animations
+* Mobile-responsive interface suitable for children
+* Task completion celebrations with visual feedback
+* Intuitive navigation for all age groups
+ Technical Stack
+Frontend: React 18 + TypeScript, Tailwind CSS, Wouter routing, TanStack Query Backend: Cloudflare Functions (serverless) Database: Neon PostgreSQL + Drizzle ORM Deployment: Cloudflare Pages UI Components: Minimal custom components (avoid heavy UI libraries for deployment simplicity)
+Database Schema
+Design tables for: households, family_members, tasks, task_assignments, task_completions, rewards, reward_claims, achievements
+ Deployment Requirements
+* Clean package.json with exact versions (no version conflicts)
+* Simple vite.config.ts without Replit-specific plugins
+* Proper TypeScript configuration
+* Cloudflare Functions in /functions/api/ directory
+* _routes.json for API routing
+* Environment variables: DATABASE_URL
+ UI Design
+* Bright, colorful interface with smooth animations
+* Card-based layout for tasks and achievements
+* Progress bars (tasks complete of tasks for the day) and visual indicators
+* Child-friendly icons and typography
+* Celebration animations for task completions
+* After login, Dashboard shows family name top left, admin button top right. Row of family member cards showing current streak, tasks completed out of tasks for the day. Day or week view with navigation forward and back. Then list of tasks for the day, with large ‘owner’ icons, title and details. Week view grouped by day.
+* Task item shows ‘DONE’ button only in filtered member list. Users must first click their name at the top to see their items then be able to complete
+* Overdue tasks are persistent if not completed on the due date and show at top of the list for today in red. 
+Key Functionality
+* Real-time task updates
+* Automatic streak calculation
+* Point allocation based on task difficulty
+* Admin dashboard for family settings
+* Task history and analytics
+* Reward management system
+Build this as a complete, production-ready application that will deploy successfully to Cloudflare Pages without configuration issues or dependency conflicts.

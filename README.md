@@ -1,31 +1,91 @@
-# Chorly - Family Chore Management
+# Chorly - Family Chore Management App
 
-A family chore management web application with gamification features, converted to Cloudflare Pages for zero cold-start delays.
-
-## Deployment Instructions
-
-1. Download this project as a ZIP
-2. Upload to your GitHub repository
-3. Connect GitHub repo to Cloudflare Pages
-4. Set environment variable: `DATABASE_URL` = your Neon PostgreSQL connection string
-5. Deploy
-
-## Environment Variables Required
-
-- `DATABASE_URL`: PostgreSQL connection string
-
-## Architecture
-
-- **Frontend**: React with TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: Cloudflare Functions (serverless)
-- **Database**: Neon PostgreSQL
-- **Performance**: ~100ms cold start, instant subsequent requests
+A gamified family chore management web application that transforms household tasks into an engaging, interactive experience.
 
 ## Features
 
-- Family authentication with profiles
-- Task management with multiple assignees
-- Streak tracking and points system
-- Admin controls for family settings
-- Real-time task completion with celebrations
-- Mobile-responsive design
+- **Email/Password Authentication** - Secure family account management
+- **Task Management** - Create, assign, and track family chores
+- **Gamification** - Points, streaks, and achievement system
+- **Family Member Management** - Role-based permissions (parents/children)
+- **Leaderboard** - Weekly family competition
+- **Reward System** - Customizable rewards for completed tasks
+- **Recurring Tasks** - Daily, weekly, or custom schedules
+- **Overdue Detection** - Automatic identification of missed tasks
+- **Admin Controls** - PIN-protected management features
+
+## Technology Stack
+
+- **Frontend**: React.js, TypeScript, Tailwind CSS
+- **Backend**: Express.js, Node.js
+- **Database**: PostgreSQL (Neon)
+- **ORM**: Drizzle
+- **Authentication**: Email/Password with bcrypt
+- **UI Components**: shadcn/ui
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18+ 
+- PostgreSQL database (Neon recommended)
+
+### Installation
+
+1. Clone the repository
+```bash
+git clone <repository-url>
+cd chorly
+```
+
+2. Install dependencies
+```bash
+npm install
+```
+
+3. Set up environment variables
+```bash
+cp .env.example .env
+```
+
+4. Configure your database URL in `.env`:
+```env
+DATABASE_URL=your_neon_database_url
+SESSION_SECRET=your_session_secret
+```
+
+5. Run database migrations
+```bash
+npm run db:migrate
+```
+
+6. Start the development server
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5000`
+
+## Deployment
+
+This application is ready for deployment on:
+
+- **Cloudflare Pages** - Frontend and backend functions
+- **Neon** - PostgreSQL database
+- **GitHub** - Source code repository
+
+### Environment Variables for Production
+
+- `DATABASE_URL` - Your Neon PostgreSQL connection string
+- `SESSION_SECRET` - Secure random string for session encryption
+- `NODE_ENV` - Set to "production"
+
+## Demo Account
+
+For testing purposes:
+- Email: jas.suttie@gmail.com
+- Password: password123
+
+## License
+
+MIT License
