@@ -1,6 +1,6 @@
-# Deployment Guide
+# Deployment Guide - Cloudflare Pages + Neon Database
 
-## GitHub + Cloudflare Pages + Neon Database
+## Complete Cloudflare Functions Setup
 
 ### 1. Create Neon Database
 

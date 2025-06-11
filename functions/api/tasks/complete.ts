@@ -1,7 +1,7 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
 import { eq, sql } from 'drizzle-orm';
-import * as schema from '../../shared/schema';
+import * as schema from '../../../shared/schema';
 
 neonConfig.webSocketConstructor = WebSocket;
 
@@ -10,7 +10,7 @@ function getHouseholdIdFromSession(cookies: string): number | null {
   return sessionMatch ? parseInt(sessionMatch[1]) : null;
 }
 
-export async function onRequestGet(context: any) {
+export async function onRequestPost(context: any) {
   const { env, request } = context;
   
   try {
@@ -27,21 +27,44 @@ export async function onRequestGet(context: any) {
       });
     }
 
+    const { taskId, memberId, dueDate } = await request.json();
+    
     const pool = new Pool({ connectionString: env.DATABASE_URL });
     const db = drizzle({ client: pool, schema });
 
-    const members = await db.select()
-      .from(schema.familyMembers)
-      .where(eq(schema.familyMembers.householdId, householdId));
+    // Get task details for points
+    const [task] = await db.select()
+      .from(schema.tasks)
+      .where(eq(schema.tasks.id, taskId))
+      .limit(1);
 
-    const leaderboard = members.map((member, index) => ({
-      member,
-      weeklyPoints: member.totalPoints || 0,
-      weeklyIncrease: 0,
-      rank: index + 1
-    }));
+    if (!task) {
+      return new Response(JSON.stringify({ message: 'Task not found' }), {
+        status: 404,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
 
-    return new Response(JSON.stringify(leaderboard), {
+    // Create completion record
+    const [completion] = await db.insert(schema.taskCompletions).values({
+      taskId,
+      memberId,
+      pointsEarned: task.points,
+      dueDate: new Date(dueDate)
+    }).returning();
+
+    // Update member's total points
+    await db.update(schema.familyMembers)
+      .set({
+        totalPoints: sql`${schema.familyMembers.totalPoints} + ${task.points}`,
+        currentStreak: sql`${schema.familyMembers.currentStreak} + 1`
+      })
+      .where(eq(schema.familyMembers.id, memberId));
+
+    return new Response(JSON.stringify(completion), {
       headers: { 
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'
@@ -49,7 +72,7 @@ export async function onRequestGet(context: any) {
     });
 
   } catch (error) {
-    console.error('Leaderboard error:', error);
+    console.error('Complete task error:', error);
     return new Response(JSON.stringify({ message: 'Server error' }), {
       status: 500,
       headers: { 

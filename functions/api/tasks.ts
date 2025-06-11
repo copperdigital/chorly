@@ -41,7 +41,7 @@ export async function onRequestGet(context: any) {
       name: schema.tasks.name,
       description: schema.tasks.description,
       points: schema.tasks.points,
-      schedule: schema.tasks.schedule,
+      scheduleType: schema.tasks.scheduleType,
       scheduleValue: schema.tasks.scheduleValue,
       startDate: schema.tasks.startDate,
       endDate: schema.tasks.endDate,
@@ -52,7 +52,7 @@ export async function onRequestGet(context: any) {
           json_build_object(
             'id', ${schema.familyMembers.id},
             'name', ${schema.familyMembers.name},
-            'avatar', ${schema.familyMembers.avatar},
+            'color', ${schema.familyMembers.color},
             'role', ${schema.familyMembers.role}
           )
         ) FILTER (WHERE ${schema.familyMembers.id} IS NOT NULL),
@@ -79,16 +79,16 @@ export async function onRequestGet(context: any) {
         return false;
       }
 
-      if (task.schedule === 'once') {
+      if (task.scheduleType === 'once') {
         return startDate.toDateString() === targetDate.toDateString();
       }
 
-      if (task.schedule === 'daily') {
+      if (task.scheduleType === 'daily') {
         const daysDiff = Math.floor((targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         return daysDiff >= 0 && daysDiff % (task.scheduleValue || 1) === 0;
       }
 
-      if (task.schedule === 'weekly') {
+      if (task.scheduleType === 'weekly') {
         const daysDiff = Math.floor((targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
         return daysDiff >= 0 && daysDiff % ((task.scheduleValue || 1) * 7) === 0;
       }

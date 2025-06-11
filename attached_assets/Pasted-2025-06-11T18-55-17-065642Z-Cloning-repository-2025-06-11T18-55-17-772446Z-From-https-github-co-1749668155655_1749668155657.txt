@@ -1,0 +1,35 @@
+2025-06-11T18:55:17.065642Z	Cloning repository...
+2025-06-11T18:55:17.772446Z	From https://github.com/copperdigital/chorly
+2025-06-11T18:55:17.772873Z	 * branch            e79d3fd90ca500d56fd0846917bb4288a3f9d783 -> FETCH_HEAD
+2025-06-11T18:55:17.772969Z	
+2025-06-11T18:55:17.803133Z	HEAD is now at e79d3fd Add Cloudflare Functions for backend API
+2025-06-11T18:55:17.803507Z	
+2025-06-11T18:55:17.884312Z	
+2025-06-11T18:55:17.884757Z	Using v2 root directory strategy
+2025-06-11T18:55:17.906291Z	Success: Finished cloning repository files
+2025-06-11T18:55:19.753782Z	Checking for configuration in a Wrangler configuration file (BETA)
+2025-06-11T18:55:19.754482Z	
+2025-06-11T18:55:20.85898Z	No wrangler.toml file found. Continuing.
+2025-06-11T18:55:20.928111Z	Detected the following tools from environment: npm@10.9.2, nodejs@22.16.0
+2025-06-11T18:55:20.928782Z	Installing project dependencies: npm clean-install --progress=false
+2025-06-11T18:55:28.826437Z	
+2025-06-11T18:55:28.826695Z	added 392 packages, and audited 393 packages in 7s
+2025-06-11T18:55:28.826871Z	
+2025-06-11T18:55:28.826989Z	56 packages are looking for funding
+2025-06-11T18:55:28.827139Z	  run `npm fund` for details
+2025-06-11T18:55:28.847458Z	
+2025-06-11T18:55:28.847789Z	6 low severity vulnerabilities
+2025-06-11T18:55:28.847948Z	
+2025-06-11T18:55:28.848163Z	Some issues need review, and may require choosing
+2025-06-11T18:55:28.848289Z	a different dependency.
+2025-06-11T18:55:28.84855Z	
+2025-06-11T18:55:28.848635Z	Run `npm audit` for details.
+2025-06-11T18:55:28.878159Z	Executing user command: npm run build
+2025-06-11T18:55:29.28003Z	
+2025-06-11T18:55:29.2804Z	> rest-express@1.0.0 build
+2025-06-11T18:55:29.28052Z	> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+2025-06-11T18:55:29.280636Z	
+2025-06-11T18:55:29.289201Z	sh: 1: vite: not found
+2025-06-11T18:55:29.299094Z	Failed: Error while executing user command. Exited with error code: 127
+2025-06-11T18:55:29.309933Z	Failed: build command exited with code: 1
+2025-06-11T18:55:30.323452Z	Failed: error occurred while running build command

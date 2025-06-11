@@ -1,0 +1,9 @@
+name = "chorly"
+compatibility_date = "2023-10-30"
+
+[build]
+command = "npx vite build"
+cwd = ""
+
+[[env.production.vars]]
+NODE_ENV = "production"
